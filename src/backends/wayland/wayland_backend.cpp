@@ -16,6 +16,7 @@
 #include "wayland_logging.h"
 #include "wayland_output.h"
 #include "wayland_qpainter_backend.h"
+#include "wayland_vulkan_backend.h"
 
 #include <KWayland/Client/keyboard.h>
 #include <KWayland/Client/pointer.h>
@@ -448,6 +449,9 @@ bool WaylandBackend::initialize()
             qCWarning(KWIN_WAYLAND_BACKEND) << "Failed to open drm render node" << dmabuf->mainDevice();
         }
     }
+
+    const auto vk = std::make_unique<WaylandVulkanBackend>(this);
+    vk->init();
 
     createOutputs();
 
