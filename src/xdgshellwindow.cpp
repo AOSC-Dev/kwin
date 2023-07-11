@@ -27,6 +27,7 @@
 #include "wayland/server_decoration_palette_interface.h"
 #include "wayland/surface_interface.h"
 #include "wayland/xdgdecoration_v1_interface.h"
+#include "wayland/xdgdialog_v1_interface.h"
 #include "wayland_server.h"
 #include "workspace.h"
 
@@ -1387,6 +1388,12 @@ void XdgToplevelWindow::installPalette(ServerSideDecorationPaletteInterface *pal
     connect(m_paletteInterface, &QObject::destroyed,
             this, &XdgToplevelWindow::updateColorScheme);
     updateColorScheme();
+}
+
+void XdgToplevelWindow::installXdgDialogV1(XdgDialogV1Interface *dialog)
+{
+    connect(dialog, &XdgDialogV1Interface::modalChanged, this, &Window::setModal);
+    setModal(dialog->isModal());
 }
 
 void XdgToplevelWindow::setFullScreen(bool set, bool user)

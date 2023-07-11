@@ -61,6 +61,7 @@
 #include "wayland/viewporter_interface.h"
 #include "wayland/xdgactivation_v1_interface.h"
 #include "wayland/xdgdecoration_v1_interface.h"
+#include "wayland/xdgdialog_v1_interface.h"
 #include "wayland/xdgforeign_v2_interface.h"
 #include "wayland/xdgoutput_v1_interface.h"
 #include "wayland/xdgshell_interface.h"
@@ -261,6 +262,9 @@ void WaylandServer::registerXdgToplevelWindow(XdgToplevelWindow *window)
     }
     if (auto palette = m_paletteManager->paletteForSurface(surface)) {
         window->installPalette(palette);
+    }
+    if (auto dialog = m_xdgDialogWm->dialogForToplevel(window->shellSurface())) {
+        window->installXdgDialogV1(dialog);
     }
 
     connect(m_XdgForeign, &XdgForeignV2Interface::transientChanged, window, [this](SurfaceInterface *child) {
@@ -516,6 +520,13 @@ bool WaylandServer::init(InitializationFlags flags)
     connect(screenEdgeManager, &KWaylandServer::ScreenEdgeManagerV1Interface::edgeRequested, this, [this](KWaylandServer::AutoHideScreenEdgeV1Interface *edge) {
         if (auto window = qobject_cast<LayerShellV1Window *>(findWindow(edge->surface()))) {
             window->installAutoHideScreenEdgeV1(edge);
+        }
+    });
+
+    m_xdgDialogWm = new KWaylandServer::XdgDialogWmV1Interface(m_display, m_display);
+    connect(m_xdgDialogWm, &KWaylandServer::XdgDialogWmV1Interface::dialogCreated, this, [this](KWaylandServer::XdgDialogV1Interface *dialog) {
+        if (auto window = findXdgToplevelWindow(dialog->toplevel()->surface())) {
+            window->installXdgDialogV1(dialog);
         }
     });
 

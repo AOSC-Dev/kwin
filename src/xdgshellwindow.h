@@ -25,6 +25,7 @@ class AppMenuInterface;
 class PlasmaShellSurfaceInterface;
 class ServerSideDecorationInterface;
 class ServerSideDecorationPaletteInterface;
+class XdgDialogV1Interface;
 class XdgToplevelDecorationV1Interface;
 }
 
@@ -161,6 +162,7 @@ public:
     void installServerDecoration(KWaylandServer::ServerSideDecorationInterface *decoration);
     void installPalette(KWaylandServer::ServerSideDecorationPaletteInterface *palette);
     void installXdgDecoration(KWaylandServer::XdgToplevelDecorationV1Interface *decoration);
+    void installXdgDialogV1(KWaylandServer::XdgDialogV1Interface *dialog);
 
 protected:
     XdgSurfaceConfigure *sendRoleConfigure() const override;

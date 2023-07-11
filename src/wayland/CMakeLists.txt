@@ -212,6 +212,10 @@ ecm_add_qtwayland_server_protocol_kde(WaylandProtocols_xml
     PROTOCOL ${PLASMA_WAYLAND_PROTOCOLS_DIR}/kde-screen-edge-v1.xml
     BASENAME kde-screen-edge-v1
 )
+ecm_add_qtwayland_server_protocol_kde(WaylandProtocols_xml
+    PROTOCOL ${PROJECT_SOURCE_DIR}/src/wayland/protocols/dialog-v1.xml
+    BASENAME dialog-v1
+)
 
 target_sources(kwin PRIVATE
     abstract_data_source.cpp
@@ -284,6 +288,7 @@ target_sources(kwin PRIVATE
     viewporter_interface.cpp
     xdgactivation_v1_interface.cpp
     xdgdecoration_v1_interface.cpp
+    xdgdialog_v1_interface.cpp
     xdgforeign_v2_interface.cpp
     xdgoutput_v1_interface.cpp
     xdgshell_interface.cpp
@@ -359,6 +364,7 @@ install(FILES
     viewporter_interface.h
     xdgactivation_v1_interface.h
     xdgdecoration_v1_interface.h
+    xdgdialog_v1_interface.h
     xdgforeign_v2_interface.h
     xdgoutput_v1_interface.h
     xdgshell_interface.h

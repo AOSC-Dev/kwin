@@ -48,6 +48,7 @@ class DrmLeaseManagerV1;
 class TearingControlManagerV1Interface;
 class XwaylandShellV1Interface;
 class OutputOrderV1Interface;
+class XdgDialogWmV1Interface;
 }
 
 namespace KWin
@@ -285,6 +286,7 @@ private:
     QHash<Output *, KWaylandServer::OutputDeviceV2Interface *> m_waylandOutputDevices;
     KWaylandServer::DrmLeaseManagerV1 *m_leaseManager = nullptr;
     KWaylandServer::OutputOrderV1Interface *m_outputOrder = nullptr;
+    KWaylandServer::XdgDialogWmV1Interface *m_xdgDialogWm = nullptr;
     KWIN_SINGLETON(WaylandServer)
 };
 
