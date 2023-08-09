@@ -43,7 +43,9 @@ private Q_SLOTS:
     void init();
     void cleanup();
 
-    void testShow();
+    void testToplevel();
+    void testPopup_data();
+    void testPopup();
 };
 
 void TestFractionalScale::initTestCase()
@@ -88,10 +90,11 @@ void TestFractionalScale::cleanup()
     Test::destroyWaylandConnection();
 }
 
-void TestFractionalScale::testShow()
+void TestFractionalScale::testToplevel()
 {
     std::unique_ptr<KWayland::Client::Surface> surface(Test::createSurface());
     std::unique_ptr<Test::FractionalScaleV1> fractionalScale(Test::createFractionalScaleV1(surface.get()));
+    QSignalSpy fractionalScaleChanged(fractionalScale.get(), &Test::FractionalScaleV1::preferredScaleChanged);
     std::unique_ptr<Test::XdgToplevel> shellSurface(Test::createXdgToplevelSurface(surface.get()));
 
     // above call commits the surface and blocks for the configure event. We should have received the scale already
@@ -100,8 +103,57 @@ void TestFractionalScale::testShow()
 
     auto window = Test::renderAndWaitForShown(surface.get(), QSize(100, 50), Qt::blue);
     QVERIFY(window);
+    QSignalSpy frameGeometryChangedSpy(window, &Window::frameGeometryChanged);
 
     QCOMPARE(fractionalScale->preferredScale(), 1.25 * 120);
+    QCOMPARE(fractionalScaleChanged.count(), 1);
+
+    // move to screen 2
+    window->move(QPoint(1280, 0));
+    frameGeometryChangedSpy.wait();
+
+    QCOMPARE(fractionalScale->preferredScale(), 2.0 * 120);
+    QCOMPARE(fractionalScaleChanged.count(), 2);
+}
+
+void TestFractionalScale::testPopup_data()
+{
+    QTest::addColumn<QPoint>("windowPosition");
+    QTest::addColumn<qreal>("expectedScale");
+
+    QTest::addRow("screen 0 @ 1.25") << workspace()->outputs()[0]->geometry().center() << workspace()->outputs()[0]->scale();
+    QTest::addRow("screen 1 @ 2x") << workspace()->outputs()[1]->geometry().center() << workspace()->outputs()[1]->scale();
+}
+
+void TestFractionalScale::testPopup()
+{
+    QFETCH(qreal, expectedScale);
+    QFETCH(QPoint, windowPosition);
+
+    std::unique_ptr<KWayland::Client::Surface> toplevelSurface(Test::createSurface());
+    std::unique_ptr<Test::FractionalScaleV1> toplevelFractionalScale(Test::createFractionalScaleV1(toplevelSurface.get()));
+    std::unique_ptr<Test::XdgToplevel> toplevel(Test::createXdgToplevelSurface(toplevelSurface.get()));
+    auto toplevelWindow = Test::renderAndWaitForShown(toplevelSurface.get(), QSize(100, 50), Qt::blue);
+    QVERIFY(toplevel);
+    QSignalSpy frameGeometryChangedSpy(toplevelWindow, &Window::frameGeometryChanged);
+    toplevelWindow->move(windowPosition - toplevelWindow->frameGeometry().center());
+    frameGeometryChangedSpy.wait();
+    QCOMPARE(toplevelFractionalScale->preferredScale(), expectedScale * 120);
+
+    std::unique_ptr<KWayland::Client::Surface> popupSurface(Test::createSurface());
+    std::unique_ptr<Test::FractionalScaleV1> popupFractionalScale(Test::createFractionalScaleV1(popupSurface.get()));
+    QSignalSpy popupFractionalScaleChanged(popupFractionalScale.get(), &Test::FractionalScaleV1::preferredScaleChanged);
+
+    std::unique_ptr<Test::XdgPositioner> positioner(Test::createXdgPositioner());
+    positioner->set_size(10, 10);
+    positioner->set_anchor_rect(10, 10, 10, 10);
+    std::unique_ptr<Test::XdgPopup> popup(Test::createXdgPopupSurface(popupSurface.get(), toplevel->xdgSurface(), positioner.get()));
+
+    QCOMPARE(popupFractionalScale->preferredScale(), expectedScale * 120);
+    auto popupWindow = Test::renderAndWaitForShown(popupSurface.get(), QSize(10, 10), Qt::cyan);
+    QVERIFY(popupWindow);
+    QCOMPARE(popupFractionalScale->preferredScale(), expectedScale * 120);
+    QCOMPARE(popupFractionalScaleChanged.count(), 1);
 }
 
 WAYLANDTEST_MAIN(TestFractionalScale)
