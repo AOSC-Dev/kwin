@@ -110,7 +110,7 @@ void TestFractionalScale::testToplevel()
 
     // move to screen 2
     window->move(QPoint(1280, 0));
-    frameGeometryChangedSpy.wait();
+    QVERIFY(frameGeometryChangedSpy.wait());
 
     QCOMPARE(fractionalScale->preferredScale(), 2.0 * 120);
     QCOMPARE(fractionalScaleChanged.count(), 2);
@@ -137,7 +137,7 @@ void TestFractionalScale::testPopup()
     QVERIFY(toplevel);
     QSignalSpy frameGeometryChangedSpy(toplevelWindow, &Window::frameGeometryChanged);
     toplevelWindow->move(windowPosition - toplevelWindow->frameGeometry().center());
-    frameGeometryChangedSpy.wait();
+    QVERIFY(frameGeometryChangedSpy.wait());
     QCOMPARE(toplevelFractionalScale->preferredScale(), expectedScale * 120);
 
     std::unique_ptr<KWayland::Client::Surface> popupSurface(Test::createSurface());
