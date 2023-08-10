@@ -44,6 +44,11 @@ std::unique_ptr<QPainterBackend> OutputBackend::createQPainterBackend()
     return nullptr;
 }
 
+std::unique_ptr<VulkanBackend> OutputBackend::createVulkanBackend()
+{
+    return nullptr;
+}
+
 std::optional<DmaBufParams> OutputBackend::testCreateDmaBuf(const QSize &size, quint32 format, const QVector<uint64_t> &modifiers)
 {
     return {};

@@ -191,6 +191,7 @@ private:
 
     bool attemptOpenGLCompositing();
     bool attemptQPainterCompositing();
+    bool attemptVulkanCompositing();
 
     Output *findOutput(RenderLoop *loop) const;
     void addOutput(Output *output);

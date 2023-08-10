@@ -12,6 +12,7 @@ namespace KWin
 {
 
 class GLTexture;
+class VulkanTexture;
 
 class KWIN_EXPORT ImageItem : public Item
 {
@@ -44,6 +45,23 @@ protected:
 private:
     std::unique_ptr<GLTexture> m_texture;
     qint64 m_textureKey = 0;
+};
+
+class ImageItemVulkan : public ImageItem
+{
+public:
+    explicit ImageItemVulkan(Scene *scene, Item *parent = nullptr);
+    ~ImageItemVulkan() override;
+
+    VulkanTexture *texture() const;
+
+protected:
+    void preprocess() override;
+    WindowQuadList buildQuads() const override;
+
+private:
+    std::unique_ptr<VulkanTexture> m_texture;
+    std::optional<int64_t> m_textureKey;
 };
 
 } // namespace KWin

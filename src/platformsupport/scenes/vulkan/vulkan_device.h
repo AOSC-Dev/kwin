@@ -41,9 +41,12 @@ public:
     std::optional<dev_t> primaryNode() const;
     std::optional<dev_t> renderNode() const;
 
+    vk::UniqueDeviceMemory allocateMemory(vk::Buffer buffer, vk::MemoryPropertyFlags memoryProperties) const;
+    vk::UniqueDeviceMemory allocateMemory(vk::Image image, vk::MemoryPropertyFlags memoryProperties) const;
+
 private:
     QHash<uint32_t, QVector<uint64_t>> queryFormats(vk::ImageUsageFlags flags) const;
-    std::optional<int> findMemoryType(vk::PhysicalDevice physicalDevice, uint32_t typeBits, vk::MemoryPropertyFlags memoryPropertyFlags) const;
+    std::optional<uint32_t> findMemoryType(uint32_t typeBits, vk::MemoryPropertyFlags memoryPropertyFlags) const;
 
     vk::PhysicalDevice m_physical;
     vk::Device m_logical;
@@ -52,6 +55,7 @@ private:
     std::optional<dev_t> m_primaryNode;
     std::optional<dev_t> m_renderNode;
     QHash<uint32_t, QVector<uint64_t>> m_formats;
+    vk::PhysicalDeviceMemoryProperties m_memoryProperties;
 
     vk::DispatchLoaderDynamic m_loader;
     QHash<GraphicsBuffer *, std::shared_ptr<VulkanTexture>> m_importedTextures;

@@ -26,6 +26,7 @@ VulkanDevice::VulkanDevice(vk::Instance instance, vk::PhysicalDevice physicalDev
     , m_primaryNode(primaryNode)
     , m_renderNode(renderNode)
     , m_formats(queryFormats(vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst))
+    , m_memoryProperties(physicalDevice.getMemoryProperties())
     , m_loader(instance, vkGetInstanceProcAddr, logicalDevice)
 {
 }
@@ -38,6 +39,7 @@ VulkanDevice::VulkanDevice(VulkanDevice &&other)
     , m_primaryNode(other.m_primaryNode)
     , m_renderNode(other.m_renderNode)
     , m_formats(other.m_formats)
+    , m_memoryProperties(other.m_memoryProperties)
     , m_loader(std::move(other.m_loader))
     , m_importedTextures(other.m_importedTextures)
 {
@@ -175,7 +177,7 @@ std::optional<VulkanTexture> VulkanDevice::importDmabuf(GraphicsBuffer *buffer) 
             memRequirementsInfo.setPNext(&planeRequirementsInfo);
         }
         const vk::MemoryRequirements2 memRequirements = m_logical.getImageMemoryRequirements2(memRequirementsInfo);
-        const auto memoryIndex = findMemoryType(m_physical, memRequirements.memoryRequirements.memoryTypeBits & memoryFdProperties.memoryTypeBits, {});
+        const auto memoryIndex = findMemoryType(memRequirements.memoryRequirements.memoryTypeBits & memoryFdProperties.memoryTypeBits, {});
         if (!memoryIndex) {
             qWarning() << "couldn't find a suitable memory type";
             return std::nullopt;
@@ -224,17 +226,6 @@ std::optional<VulkanTexture> VulkanDevice::importDmabuf(GraphicsBuffer *buffer) 
     }
 
     return VulkanTexture(format->vulkanFormat, std::move(image), std::move(deviceMemory), std::move(imageView));
-}
-
-std::optional<int> VulkanDevice::findMemoryType(vk::PhysicalDevice physicalDevice, uint32_t typeBits, vk::MemoryPropertyFlags memoryPropertyFlags) const
-{
-    const auto props = physicalDevice.getMemoryProperties();
-    for (uint32_t i = 0; i < props.memoryTypeCount; i++) {
-        if ((typeBits & 1) && ((props.memoryTypes[i].propertyFlags & memoryPropertyFlags) == memoryPropertyFlags)) {
-            return i;
-        }
-    }
-    return std::nullopt;
 }
 
 QHash<uint32_t, QVector<uint64_t>> VulkanDevice::queryFormats(vk::ImageUsageFlags flags) const
@@ -293,6 +284,50 @@ QHash<uint32_t, QVector<uint64_t>> VulkanDevice::queryFormats(vk::ImageUsageFlag
         }
     }
     return ret;
+}
+
+std::optional<uint32_t> VulkanDevice::findMemoryType(uint32_t typeBits, vk::MemoryPropertyFlags memoryPropertyFlags) const
+{
+    for (uint32_t i = 0; i < m_memoryProperties.memoryTypeCount; i++) {
+        if ((typeBits & 1) && ((m_memoryProperties.memoryTypes[i].propertyFlags & memoryPropertyFlags) == memoryPropertyFlags)) {
+            return i;
+        }
+    }
+    return std::nullopt;
+}
+
+vk::UniqueDeviceMemory VulkanDevice::allocateMemory(vk::Buffer buffer, vk::MemoryPropertyFlags memoryProperties) const
+{
+    const auto requirements = m_logical.getBufferMemoryRequirements(buffer);
+    if (const auto typeIndex = findMemoryType(requirements.memoryTypeBits, memoryProperties)) {
+        auto [result, ret] = m_logical.allocateMemoryUnique(vk::MemoryAllocateInfo(requirements.size, *typeIndex));
+        if (result == vk::Result::eSuccess) {
+            return std::move(ret);
+        } else {
+            qWarning() << "Allocating memory for a buffer failed:" << vk::to_string(result);
+            return {};
+        }
+    } else {
+        qWarning() << "could not find a suitable memory index for a buffer";
+        return {};
+    }
+}
+
+vk::UniqueDeviceMemory VulkanDevice::allocateMemory(vk::Image image, vk::MemoryPropertyFlags memoryProperties) const
+{
+    const auto requirements = m_logical.getImageMemoryRequirements(image);
+    if (const auto typeIndex = findMemoryType(requirements.memoryTypeBits, memoryProperties)) {
+        auto [result, ret] = m_logical.allocateMemoryUnique(vk::MemoryAllocateInfo(requirements.size, *typeIndex));
+        if (result == vk::Result::eSuccess) {
+            return std::move(ret);
+        } else {
+            qWarning() << "Allocating memory for an image failed:" << vk::to_string(result);
+            return {};
+        }
+    } else {
+        qWarning() << "could not find a suitable memory index for an image";
+        return {};
+    }
 }
 
 QHash<uint32_t, QVector<uint64_t>> VulkanDevice::supportedFormats() const
