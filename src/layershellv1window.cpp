@@ -59,13 +59,13 @@ LayerShellV1Window::LayerShellV1Window(LayerSurfaceV1Interface *shellSurface,
     connect(output, &Output::enabledChanged,
             this, &LayerShellV1Window::handleOutputEnabledChanged);
 
-    connect(shellSurface->surface(), &SurfaceInterface::sizeChanged,
-            this, &LayerShellV1Window::handleSizeChanged);
     connect(shellSurface->surface(), &SurfaceInterface::unmapped,
             this, &LayerShellV1Window::handleUnmapped);
     connect(shellSurface->surface(), &SurfaceInterface::committed,
             this, &LayerShellV1Window::handleCommitted);
 
+    connect(shellSurface, &LayerSurfaceV1Interface::configureAcknowledged,
+            this, &LayerShellV1Window::handleConfigureAcknowledged);
     connect(shellSurface, &LayerSurfaceV1Interface::desiredSizeChanged,
             this, &LayerShellV1Window::scheduleRearrange);
     connect(shellSurface, &LayerSurfaceV1Interface::layerChanged,
@@ -78,6 +78,9 @@ LayerShellV1Window::LayerShellV1Window(LayerSurfaceV1Interface *shellSurface,
             this, &LayerShellV1Window::scheduleRearrange);
     connect(shellSurface, &LayerSurfaceV1Interface::acceptsFocusChanged,
             this, &LayerShellV1Window::handleAcceptsFocusChanged);
+
+    m_configureTimer.setSingleShot(true);
+    connect(&m_configureTimer, &QTimer::timeout, this, &LayerShellV1Window::sendConfigure);
 }
 
 LayerSurfaceV1Interface *LayerShellV1Window::shellSurface() const
@@ -141,24 +144,38 @@ StrutRect LayerShellV1Window::strutRect(StrutArea area) const
     switch (area) {
     case StrutAreaLeft:
         if (m_shellSurface->exclusiveEdge() == Qt::LeftEdge) {
-            return StrutRect(x(), y(), m_shellSurface->exclusiveZone(), height(), StrutAreaLeft);
+            return StrutRect(m_moveResizeGeometry.x(),
+                             m_moveResizeGeometry.y(),
+                             m_shellSurface->exclusiveZone(),
+                             m_moveResizeGeometry.height(),
+                             StrutAreaLeft);
         }
         return StrutRect();
     case StrutAreaRight:
         if (m_shellSurface->exclusiveEdge() == Qt::RightEdge) {
-            return StrutRect(x() + width() - m_shellSurface->exclusiveZone(), y(),
-                             m_shellSurface->exclusiveZone(), height(), StrutAreaRight);
+            return StrutRect(m_moveResizeGeometry.x() + m_moveResizeGeometry.width() - m_shellSurface->exclusiveZone(),
+                             m_moveResizeGeometry.y(),
+                             m_shellSurface->exclusiveZone(),
+                             m_moveResizeGeometry.height(),
+                             StrutAreaRight);
         }
         return StrutRect();
     case StrutAreaTop:
         if (m_shellSurface->exclusiveEdge() == Qt::TopEdge) {
-            return StrutRect(x(), y(), width(), m_shellSurface->exclusiveZone(), StrutAreaTop);
+            return StrutRect(m_moveResizeGeometry.x(),
+                             m_moveResizeGeometry.y(),
+                             m_moveResizeGeometry.width(),
+                             m_shellSurface->exclusiveZone(),
+                             StrutAreaTop);
         }
         return StrutRect();
     case StrutAreaBottom:
         if (m_shellSurface->exclusiveEdge() == Qt::BottomEdge) {
-            return StrutRect(x(), y() + height() - m_shellSurface->exclusiveZone(),
-                             width(), m_shellSurface->exclusiveZone(), StrutAreaBottom);
+            return StrutRect(m_moveResizeGeometry.x(),
+                             m_moveResizeGeometry.y() + m_moveResizeGeometry.height() - m_shellSurface->exclusiveZone(),
+                             m_moveResizeGeometry.width(),
+                             m_shellSurface->exclusiveZone(),
+                             StrutAreaBottom);
         }
         return StrutRect();
     default:
@@ -173,6 +190,8 @@ bool LayerShellV1Window::hasStrut() const
 
 void LayerShellV1Window::destroyWindow()
 {
+    m_configureTimer.stop();
+
     if (m_screenEdge) {
         m_screenEdge->disconnect(this);
     }
@@ -224,23 +243,21 @@ void LayerShellV1Window::moveResizeInternal(const QRectF &rect, MoveResizeMode m
     }
 
     const QSizeF requestedClientSize = frameSizeToClientSize(rect.size());
-    if (requestedClientSize != clientSize()) {
-        m_shellSurface->sendConfigure(rect.size().toSize());
-    } else {
+    if (m_configureEvents.isEmpty() && requestedClientSize == clientSize()) {
         updateGeometry(rect);
-        return;
+    } else {
+        scheduleConfigure();
     }
-
-    // The surface position is updated synchronously.
-    QRectF updateRect = m_frameGeometry;
-    updateRect.moveTopLeft(rect.topLeft());
-    updateGeometry(updateRect);
 }
 
-void LayerShellV1Window::handleSizeChanged()
+void LayerShellV1Window::handleConfigureAcknowledged(quint32 serial)
 {
-    updateGeometry(QRectF(pos(), clientSizeToFrameSize(surface()->size())));
-    scheduleRearrange();
+    while (!m_configureEvents.isEmpty()) {
+        m_lastConfigureEvent = m_configureEvents.takeFirst();
+        if (m_lastConfigureEvent.serial == serial) {
+            break;
+        }
+    }
 }
 
 void LayerShellV1Window::handleUnmapped()
@@ -250,9 +267,12 @@ void LayerShellV1Window::handleUnmapped()
 
 void LayerShellV1Window::handleCommitted()
 {
-    if (surface()->buffer()) {
-        markAsMapped();
+    if (!surface()->buffer()) {
+        return;
     }
+
+    updateGeometry(QRectF(m_lastConfigureEvent.position, clientSizeToFrameSize(surface()->size())));
+    markAsMapped();
 }
 
 void LayerShellV1Window::handleAcceptsFocusChanged()
@@ -338,6 +358,20 @@ void LayerShellV1Window::deactivateScreenEdge()
 {
     m_screenEdgeActive = false;
     unreserveScreenEdge();
+}
+
+void LayerShellV1Window::scheduleConfigure()
+{
+    m_configureTimer.start();
+}
+
+void LayerShellV1Window::sendConfigure()
+{
+    const quint32 serial = m_shellSurface->sendConfigure(frameSizeToClientSize(moveResizeGeometry().size()).toSize());
+    m_configureEvents.append(LayerShellV1ConfigureEvent{
+        .position = moveResizeGeometry().topLeft(),
+        .serial = serial,
+    });
 }
 
 } // namespace KWin
