@@ -40,6 +40,11 @@ SurfaceItemWayland::SurfaceItemWayland(SurfaceInterface *surface, Scene *scene, 
             this, &SurfaceItemWayland::addDamage);
     connect(surface, &SurfaceInterface::childSubSurfaceRemoved,
             this, &SurfaceItemWayland::handleChildSubSurfaceRemoved);
+    const auto fullSchedule = [this]() {
+        scheduleRepaint(rect());
+    };
+    connect(surface, &SurfaceInterface::aboutToBeDestroyed, this, fullSchedule);
+    connect(surface, &SurfaceInterface::unmapped, this, fullSchedule);
 
     SubSurfaceInterface *subsurface = surface->subSurface();
     if (subsurface) {
