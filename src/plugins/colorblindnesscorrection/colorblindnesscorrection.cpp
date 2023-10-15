@@ -6,12 +6,12 @@
 
 #include "colorblindnesscorrection.h"
 
-#include <KSharedConfig>
+#include <QFile>
 
 #include "libkwineffects/glshader.h"
 #include "libkwineffects/kwineffects.h"
 
-#include "colorblindnesscorrection_settings.h"
+#include "colorblindnesscorrection_settings_singleton.h"
 
 Q_LOGGING_CATEGORY(KWIN_COLORBLINDNESS_CORRECTION, "kwin_effect_colorblindnesscorrection", QtWarningMsg)
 
@@ -26,8 +26,11 @@ namespace KWin
 
 ColorBlindnessCorrectionEffect::ColorBlindnessCorrectionEffect()
     : OffscreenEffect()
-    , m_mode(static_cast<Mode>(ColorBlindnessCorrectionSettings().mode()))
 {
+    initConfig<ColorBlindnessCorrectionSettings>();
+    m_mode = static_cast<Mode>(ColorBlindnessCorrectionSettings::mode());
+    m_intensity = std::clamp(ColorBlindnessCorrectionSettings::intensity(), 0.0, 1.0);
+
     loadData();
 }
 
@@ -58,8 +61,13 @@ void ColorBlindnessCorrectionEffect::loadData()
         break;
     }
 
-    m_shader = ShaderManager::instance()->generateShaderFromFile(ShaderTrait::MapTexture, QString(), fragPath);
-
+    m_shader = ShaderManager::instance()->generateShaderFromFile(ShaderTrait::MapTexture,
+                                                                 {},
+                                                                 fragPath,
+                                                                 {},
+                                                                 {
+                                                                     {QByteArray("INTENSITY"), QString::number(m_intensity, 'f', 2).toLatin1()},
+                                                                 });
     if (!m_shader->isValid()) {
         qCCritical(KWIN_COLORBLINDNESS_CORRECTION) << "Failed to load the shader!";
         return;
@@ -108,12 +116,15 @@ void ColorBlindnessCorrectionEffect::reconfigure(ReconfigureFlags flags)
         return;
     }
 
-    auto newMode = static_cast<Mode>(ColorBlindnessCorrectionSettings().mode());
-    if (m_mode == newMode) {
+    ColorBlindnessCorrectionSettings::self()->read();
+    auto newMode = static_cast<Mode>(ColorBlindnessCorrectionSettings::mode());
+    auto newIntensity = std::clamp(ColorBlindnessCorrectionSettings::intensity(), 0.0, 1.0);
+    if (m_mode == newMode && m_intensity == newIntensity) {
         return;
     }
 
     m_mode = newMode;
+    m_intensity = newIntensity;
 
     disconnect(effects, &EffectsHandler::windowDeleted, this, &ColorBlindnessCorrectionEffect::slotWindowDeleted);
     disconnect(effects, &EffectsHandler::windowAdded, this, &ColorBlindnessCorrectionEffect::correctColor);

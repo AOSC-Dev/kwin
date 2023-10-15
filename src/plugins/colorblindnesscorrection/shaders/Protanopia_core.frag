@@ -4,7 +4,6 @@
 uniform sampler2D sampler;
 uniform vec4 modulation;
 uniform float saturation;
-
 in vec2 texcoord0;
 out vec4 fragColor;
 
@@ -32,6 +31,8 @@ void main()
     error.g = (-0.0102485335 * l) + (0.0540193266 * m) + (-0.113614708 * s);
     error.b = (-0.000365296938 * l) + (-0.00412161469 * m) + (0.693511405 * s);
     error.a = 1.0;
+    error.rgb = error.rgb * vec3(INTENSITY) + tex.rgb * vec3(1 - INTENSITY);
+
     vec4 diff = tex - error;
     vec4 correction;
     correction.r = 0.0;

@@ -48,6 +48,7 @@ private:
     void loadData();
 
     Mode m_mode = Protanopia;
+    double m_intensity = 1.0;
 
     std::unordered_set<KWin::EffectWindow *> m_windows;
     std::unique_ptr<GLShader> m_shader;
