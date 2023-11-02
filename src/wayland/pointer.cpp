@@ -7,7 +7,6 @@
 */
 
 #include "pointer.h"
-#include "clientconnection.h"
 #include "display.h"
 #include "pointer_p.h"
 #include "pointergestures_v1_p.h"
@@ -219,6 +218,15 @@ void PointerInterface::sendButton(quint32 button, PointerButtonState state, quin
     const auto pointerResources = d->pointersForClient(d->focusedSurface->client());
     for (PointerInterfacePrivate::Resource *resource : pointerResources) {
         d->send_button(resource->handle, serial, d->seat->timestamp().count(), button, quint32(state));
+    }
+}
+
+void PointerInterface::sendButton(quint32 button, PointerButtonState state, ClientConnection *client)
+{
+    const QList<PointerInterfacePrivate::Resource *> pointers = d->pointersForClient(client);
+    const quint32 serial = d->seat->display()->nextSerial();
+    for (PointerInterfacePrivate::Resource *pointerResource : pointers) {
+        d->send_button(pointerResource->handle, serial, d->seat->timestamp().count(), button, quint32(state));
     }
 }
 
