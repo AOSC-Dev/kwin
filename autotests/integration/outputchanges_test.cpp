@@ -43,6 +43,7 @@ private Q_SLOTS:
     void testFullScreenWindowRestoredAfterEnablingOutput();
     void testWindowRestoredAfterChangingScale();
     void testMaximizeStateRestoredAfterEnablingOutput();
+    void testInvalidGeometryRestoreAfterEnablingOutput();
 
     void testWindowNotRestoredAfterMovingWindowAndEnablingOutput();
     void testLaptopLidClosed();
@@ -593,6 +594,103 @@ void OutputChangesTest::testMaximizeStateRestoredAfterEnablingOutput()
     QCOMPARE(window->maximizeMode(), MaximizeFull);
     QCOMPARE(window->requestedMaximizeMode(), MaximizeFull);
     QCOMPARE(window->geometryRestore(), QRectF(1280 + 50, 100, 100, 50));
+}
+
+void OutputChangesTest::testInvalidGeometryRestoreAfterEnablingOutput()
+{
+    // This test verifies that the geometry restore gets restore correctly, even if it's invalid
+
+    const auto outputs = kwinApp()->outputBackend()->outputs();
+
+    // Disable the right output
+    {
+        OutputConfiguration config;
+        auto changeSet = config.changeSet(outputs[1]);
+        changeSet->enabled = false;
+        workspace()->applyOutputConfiguration(config);
+    }
+
+    // Create a window.
+    std::unique_ptr<KWayland::Client::Surface> surface(Test::createSurface());
+    std::unique_ptr<Test::XdgToplevel> shellSurface(Test::createXdgToplevelSurface(surface.get(), Test::CreationSetup::CreateOnly));
+    shellSurface->set_maximized();
+    {
+        QSignalSpy surfaceConfigureRequestedSpy(shellSurface->xdgSurface(), &Test::XdgSurface::configureRequested);
+        shellSurface->xdgSurface()->surface()->commit(KWayland::Client::Surface::CommitFlag::None);
+        QVERIFY(surfaceConfigureRequestedSpy.wait());
+        shellSurface->xdgSurface()->ack_configure(surfaceConfigureRequestedSpy.last().first().toUInt());
+    }
+    auto window = Test::renderAndWaitForShown(surface.get(), QSize(1280, 1024), Qt::blue);
+    QVERIFY(window);
+
+    const QRectF originalGeometry = window->moveResizeGeometry();
+
+    // Enable the right output
+    {
+        OutputConfiguration config;
+        auto changeSet = config.changeSet(outputs[1]);
+        changeSet->enabled = true;
+        workspace()->applyOutputConfiguration(config);
+    }
+
+    // Move the window to the right monitor and make it maximized.
+    window->sendToOutput(outputs[1]);
+    Test::render(surface.get(), QSize(1280, 1024), Qt::blue);
+    QCOMPARE(window->frameGeometry(), QRectF(1280, 0, 1280, 1024));
+    QCOMPARE(window->moveResizeGeometry(), QRectF(1280, 0, 1280, 1024));
+    QCOMPARE(window->output(), outputs[1]);
+    QCOMPARE(window->maximizeMode(), MaximizeFull);
+    QCOMPARE(window->requestedMaximizeMode(), MaximizeFull);
+    QVERIFY(outputs[1]->geometry().contains(window->geometryRestore().topLeft().toPoint()));
+    QCOMPARE(window->geometryRestore().size(), QSizeF());
+    const QRectF previousGeometryRestore = window->geometryRestore();
+
+    // Disable the right output
+    {
+        OutputConfiguration config;
+        auto changeSet = config.changeSet(outputs[1]);
+        changeSet->enabled = false;
+        workspace()->applyOutputConfiguration(config);
+    }
+
+    QSignalSpy toplevelConfigureRequestedSpy(shellSurface.get(), &Test::XdgToplevel::configureRequested);
+    QSignalSpy surfaceConfigureRequestedSpy(shellSurface->xdgSurface(), &Test::XdgSurface::configureRequested);
+    QSignalSpy frameGeometryChangedSpy(window, &Window::frameGeometryChanged);
+
+    // The window will be moved to its prior position on the left monitor and unmaximized
+    QVERIFY(surfaceConfigureRequestedSpy.wait());
+    QCOMPARE(toplevelConfigureRequestedSpy.last().at(0).value<QSize>(), originalGeometry.size().toSize());
+    shellSurface->xdgSurface()->ack_configure(surfaceConfigureRequestedSpy.last().at(0).value<quint32>());
+    Test::render(surface.get(), originalGeometry.size().toSize(), Qt::blue);
+    QVERIFY(frameGeometryChangedSpy.wait());
+    QCOMPARE(window->frameGeometry(), originalGeometry);
+    QCOMPARE(window->moveResizeGeometry(), originalGeometry);
+    QCOMPARE(window->output(), outputs[0]);
+    QCOMPARE(window->maximizeMode(), MaximizeRestore);
+    QCOMPARE(window->requestedMaximizeMode(), MaximizeRestore);
+    QVERIFY(outputs[0]->geometry().contains(window->geometryRestore().topLeft().toPoint()));
+    QCOMPARE(window->geometryRestore().size(), QSizeF());
+
+    // Enable the right output again
+    {
+        OutputConfiguration config;
+        auto changeSet = config.changeSet(outputs[1]);
+        changeSet->enabled = true;
+        workspace()->applyOutputConfiguration(config);
+    }
+
+    // The window will be moved back to the right monitor, maximized and the geometry restore will be updated
+    QVERIFY(surfaceConfigureRequestedSpy.wait());
+    QCOMPARE(toplevelConfigureRequestedSpy.last().at(0).value<QSize>(), outputs[1]->geometry().size());
+    shellSurface->xdgSurface()->ack_configure(surfaceConfigureRequestedSpy.last().at(0).value<quint32>());
+    Test::render(surface.get(), outputs[1]->geometry().size(), Qt::blue);
+    QVERIFY(frameGeometryChangedSpy.wait());
+    QCOMPARE(window->frameGeometry(), QRectF(1280, 0, 1280, 1024));
+    QCOMPARE(window->moveResizeGeometry(), QRectF(1280, 0, 1280, 1024));
+    QCOMPARE(window->output(), outputs[1]);
+    QCOMPARE(window->maximizeMode(), MaximizeFull);
+    QCOMPARE(window->requestedMaximizeMode(), MaximizeFull);
+    QCOMPARE(window->geometryRestore(), previousGeometryRestore);
 }
 
 void OutputChangesTest::testLaptopLidClosed()
