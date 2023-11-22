@@ -9,6 +9,8 @@
 #include "scene/surfaceitem.h"
 
 #include <drm_fourcc.h>
+#include <sys/eventfd.h>
+#include <xf86drm.h>
 
 namespace KWin
 {
@@ -36,6 +38,29 @@ void OutputFrame::presented(std::chrono::nanoseconds refreshDuration, std::chron
 void OutputFrame::failed()
 {
     RenderLoopPrivate::get(m_loop)->notifyFrameFailed();
+}
+
+SyncTimeline::SyncTimeline(int drmFd, uint32_t handle)
+    : m_drmFd(drmFd)
+    , m_handle(handle)
+{
+}
+
+SyncTimeline::~SyncTimeline()
+{
+    drmSyncobjDestroy(m_drmFd, m_handle);
+}
+
+FileDescriptor SyncTimeline::eventFd(uint64_t timelinePoint) const
+{
+    FileDescriptor ret{eventfd(0, EFD_CLOEXEC)};
+    if (!ret.isValid()) {
+        return {};
+    }
+    if (drmSyncobjEventfd(m_drmFd, m_handle, timelinePoint, ret.get(), 0) != 0) {
+        return {};
+    }
+    return ret;
 }
 
 RenderBackend::RenderBackend(QObject *parent)
@@ -79,6 +104,16 @@ std::unique_ptr<SurfaceTexture> RenderBackend::createSurfaceTextureX11(SurfacePi
 }
 
 std::unique_ptr<SurfaceTexture> RenderBackend::createSurfaceTextureWayland(SurfacePixmap *pixmap)
+{
+    return nullptr;
+}
+
+bool RenderBackend::supportsTimelines() const
+{
+    return false;
+}
+
+std::unique_ptr<SyncTimeline> RenderBackend::importTimeline(FileDescriptor &&syncObjFd)
 {
     return nullptr;
 }

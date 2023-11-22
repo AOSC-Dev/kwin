@@ -13,6 +13,7 @@
 #include "utils/common.h"
 #include "utils/egl_context_attribute_builder.h"
 #include "wayland/drmclientbuffer.h"
+#include "wayland/linux_drm_syncobj_v1.h"
 #include "wayland_server.h"
 // kwin libs
 #include "kwineglimagetexture.h"
@@ -220,6 +221,8 @@ void AbstractEglBackend::initWayland()
     LinuxDmaBufV1ClientBufferIntegration *dmabuf = waylandServer()->linuxDmabuf();
     dmabuf->setRenderBackend(this);
     dmabuf->setSupportedFormatsWithModifiers(m_tranches);
+    LinuxDrmSyncObjV1Interface *syncObj = waylandServer()->linuxSyncObj();
+    syncObj->setRenderBackend(this);
 }
 
 void AbstractEglBackend::initClientExtensions()

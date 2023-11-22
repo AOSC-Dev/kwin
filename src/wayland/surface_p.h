@@ -27,6 +27,7 @@ class TearingControlV1Interface;
 class FractionalScaleV1Interface;
 class FrogColorManagementSurfaceV1;
 class PresentationTimeFeedback;
+class LinuxDrmSyncObjSurfaceV1;
 
 struct SurfaceState
 {
@@ -70,6 +71,7 @@ struct SurfaceState
     PresentationHint presentationHint = PresentationHint::VSync;
     ColorDescription colorDescription = ColorDescription::sRGB;
     std::unique_ptr<PresentationTimeFeedback> presentationFeedback;
+    FileDescriptor explicitSyncFd;
 
     struct
     {
@@ -169,6 +171,7 @@ public:
     ClientConnection *client = nullptr;
     TearingControlV1Interface *tearing = nullptr;
     FrogColorManagementSurfaceV1 *frogColorManagement = nullptr;
+    LinuxDrmSyncObjSurfaceV1 *syncObjV1 = nullptr;
 
     struct
     {

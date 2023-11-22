@@ -8,6 +8,7 @@
 
 #include "core/rendertarget.h"
 #include "effect/globals.h"
+#include "utils/filedescriptor.h"
 
 #include <QObject>
 
@@ -54,6 +55,22 @@ private:
     std::vector<std::unique_ptr<PresentationFeedback>> m_feedbacks;
 };
 
+class KWIN_EXPORT SyncTimeline
+{
+public:
+    explicit SyncTimeline(int drmFd, uint32_t handle);
+    ~SyncTimeline();
+
+    /**
+     * @returns an event fd that gets signalled when the timeline point gets signalled
+     */
+    FileDescriptor eventFd(uint64_t timelinePoint) const;
+
+private:
+    const int32_t m_drmFd;
+    const uint32_t m_handle;
+};
+
 /**
  * The RenderBackend class is the base class for all rendering backends.
  */
@@ -80,6 +97,9 @@ public:
 
     virtual std::unique_ptr<SurfaceTexture> createSurfaceTextureX11(SurfacePixmapX11 *pixmap);
     virtual std::unique_ptr<SurfaceTexture> createSurfaceTextureWayland(SurfacePixmap *pixmap);
+
+    virtual bool supportsTimelines() const;
+    virtual std::unique_ptr<SyncTimeline> importTimeline(FileDescriptor &&syncObjFd);
 };
 
 } // namespace KWin

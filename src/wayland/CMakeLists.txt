@@ -211,7 +211,6 @@ ecm_add_qtwayland_server_protocol_kde(WaylandProtocols_xml
     PROTOCOL ${WaylandProtocols_DATADIR}/staging/cursor-shape/cursor-shape-v1.xml
     BASENAME cursor-shape-v1
 )
-
 ecm_add_qtwayland_server_protocol_kde(WaylandProtocols_xml
     PROTOCOL protocols/qt-toplevel-drag-v1.xml
     BASENAME qt-toplevel-drag-v1
@@ -224,10 +223,13 @@ ecm_add_qtwayland_server_protocol_kde(WaylandProtocols_xml
     PROTOCOL ${WaylandProtocols_DATADIR}/stable/presentation-time/presentation-time.xml
     BASENAME presentation-time
 )
-
 ecm_add_qtwayland_server_protocol_kde(WaylandProtocols_xml
     PROTOCOL ${WaylandProtocols_DATADIR}/staging/security-context/security-context-v1.xml
     BASENAME security-context-v1
+)
+ecm_add_qtwayland_server_protocol_kde(WaylandProtocols_xml
+    PROTOCOL protocols/linux-drm-syncobj-v1.xml
+    BASENAME linux-drm-syncobj-v1
 )
 
 target_sources(kwin PRIVATE
@@ -263,6 +265,7 @@ target_sources(kwin PRIVATE
     keyboard_shortcuts_inhibit_v1.cpp
     keystate.cpp
     layershell_v1.cpp
+    linux_drm_syncobj_v1.cpp
     linuxdmabufv1clientbuffer.cpp
     lockscreen_overlay_v1.cpp
     output.cpp
@@ -339,6 +342,7 @@ install(FILES
     keyboard_shortcuts_inhibit_v1.h
     keystate.h
     layershell_v1.h
+    linux_drm_syncobj_v1.h
     lockscreen_overlay_v1.h
     output.h
     output_order_v1.h
