@@ -202,6 +202,8 @@ KWin.TabBoxSwitcher {
                         thumbnailGridView.currentIndex = tabBox.currentIndex;
                     }
                 }
+                // Dialog does not have focus, so focus a11y events are ignored in tabbox unless forceActiveFocus is used
+                onCurrentItemChanged: this.currentItem.forceActiveFocus(Qt.TabFocusReason)
             } // GridView
 
             Keys.onPressed: {
