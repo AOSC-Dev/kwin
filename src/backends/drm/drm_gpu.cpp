@@ -30,6 +30,7 @@
 #include <fcntl.h>
 #include <poll.h>
 #include <unistd.h>
+#include <ranges>
 // drm
 #include <drm_fourcc.h>
 #include <gbm.h>
@@ -205,14 +206,14 @@ void DrmGpu::initDrmResources()
         }
         const auto findBestPlane = [crtcId](const QList<DrmPlane *> &list) {
             // if the plane is already used with this crtc, prefer it
-            const auto connected = std::find_if(list.begin(), list.end(), [crtcId](DrmPlane *plane) {
+            const auto connected = std::ranges::find_if(list, [crtcId](DrmPlane *plane) {
                 return plane->crtcId.value() == crtcId;
             });
             if (connected != list.end()) {
                 return *connected;
             }
             // don't take away planes from other crtcs. The kernel currently rejects such commits
-            const auto notconnected = std::find_if(list.begin(), list.end(), [](DrmPlane *plane) {
+            const auto notconnected = std::ranges::find_if(list, [](DrmPlane *plane) {
                 return plane->crtcId.value() == 0;
             });
             if (notconnected != list.end()) {
