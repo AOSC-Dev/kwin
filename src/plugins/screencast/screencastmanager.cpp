@@ -12,6 +12,7 @@
 #include "core/outputbackend.h"
 #include "opengl/gltexture.h"
 #include "outputscreencastsource.h"
+#include "pipewirecore.h"
 #include "regionscreencastsource.h"
 #include "scene/workspacescene.h"
 #include "screencaststream.h"
@@ -29,6 +30,7 @@ namespace KWin
 
 ScreencastManager::ScreencastManager()
     : m_screencast(new ScreencastV1Interface(waylandServer()->display(), this))
+    , m_core(PipeWireCore::self())
 {
     connect(m_screencast, &ScreencastV1Interface::windowScreencastRequested, this, &ScreencastManager::streamWindow);
     connect(m_screencast, &ScreencastV1Interface::outputScreencastRequested, this, &ScreencastManager::streamWaylandOutput);
