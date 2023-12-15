@@ -484,6 +484,8 @@ public:
     void reconfigure();
 
     QByteArray readRootProperty(long atom, long type, int format) const;
+
+#if KWIN_BUILD_X11
     /**
      * @brief Announces support for the feature with the given name. If no other Effect
      * has announced support for this feature yet, an X11 property will be installed on
@@ -515,6 +517,7 @@ public:
      * @since 4.11
      */
     void removeSupportProperty(const QByteArray &propertyName, Effect *effect);
+#endif
 
     /**
      * Returns @a true if the active window decoration has shadow API hooks.
@@ -574,8 +577,10 @@ public:
      */
     void doneOpenGLContextCurrent();
 
+#if KWIN_BUILD_X11
     xcb_connection_t *xcbConnection() const;
     xcb_window_t x11RootWindow() const;
+#endif
 
     /**
      * Interface to the Wayland display: this is relevant only
@@ -991,6 +996,7 @@ Q_SIGNALS:
      */
     void windowDataChanged(KWin::EffectWindow *w, int role);
 
+#if KWIN_BUILD_X11
     /**
      * The xcb connection changed, either a new xcbConnection got created or the existing one
      * got destroyed.
@@ -1002,6 +1008,7 @@ Q_SIGNALS:
      * @since 5.11
      */
     void xcbConnectionChanged();
+#endif
 
     /**
      * This signal is emitted when active fullscreen effect changed.
@@ -1094,7 +1101,9 @@ protected:
     EffectsIterator m_currentPaintWindowIterator;
     EffectsIterator m_currentPaintScreenIterator;
     typedef QHash<QByteArray, QList<Effect *>> PropertyEffectMap;
+#if KWIN_BUILD_X11
     PropertyEffectMap m_propertiesForEffects;
+#endif
     QHash<QByteArray, qulonglong> m_managedProperties;
     Compositor *m_compositor;
     WorkspaceScene *m_scene;

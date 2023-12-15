@@ -82,11 +82,13 @@ StartupFeedbackEffect::StartupFeedbackEffect()
     , m_configWatcher(KConfigWatcher::create(KSharedConfig::openConfig("klaunchrc", KConfig::NoGlobals)))
     , m_splashVisible(false)
 {
+#if KWIN_BUILD_X11
     // TODO: move somewhere that is x11-specific
     if (KWindowSystem::isPlatformX11()) {
         m_selection = new KSelectionOwner("_KDE_STARTUP_FEEDBACK", effects->xcbConnection(), effects->x11RootWindow(), this);
         m_selection->claim(true);
     }
+#endif
     connect(m_startupInfo, &KStartupInfo::gotNewStartup, this, [](const KStartupInfoId &id, const KStartupInfoData &data) {
         const auto icon = QIcon::fromTheme(data.findIcon(), QIcon::fromTheme(QStringLiteral("system-run")));
         Q_EMIT effects->startupAdded(id.id(), icon);

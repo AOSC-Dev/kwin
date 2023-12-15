@@ -53,14 +53,16 @@ SlidingPopupsEffect::SlidingPopupsEffect()
 
     m_slideLength = QFontMetrics(QGuiApplication::font()).height() * 8;
 
+#if KWIN_BUILD_X11
     m_atom = effects->announceSupportProperty("_KDE_SLIDE", this);
+    connect(effects, &EffectsHandler::xcbConnectionChanged, this, [this]() {
+        m_atom = effects->announceSupportProperty(QByteArrayLiteral("_KDE_SLIDE"), this);
+    });
+#endif
     connect(effects, &EffectsHandler::windowAdded, this, &SlidingPopupsEffect::slotWindowAdded);
     connect(effects, &EffectsHandler::windowClosed, this, &SlidingPopupsEffect::slideOut);
     connect(effects, &EffectsHandler::windowDeleted, this, &SlidingPopupsEffect::slotWindowDeleted);
     connect(effects, &EffectsHandler::propertyNotify, this, &SlidingPopupsEffect::slotPropertyNotify);
-    connect(effects, &EffectsHandler::xcbConnectionChanged, this, [this]() {
-        m_atom = effects->announceSupportProperty(QByteArrayLiteral("_KDE_SLIDE"), this);
-    });
     connect(effects, &EffectsHandler::desktopChanged,
             this, &SlidingPopupsEffect::stopAnimations);
     connect(effects, &EffectsHandler::activeFullScreenEffectChanged,

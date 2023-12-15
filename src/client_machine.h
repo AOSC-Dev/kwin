@@ -8,9 +8,12 @@
 */
 #pragma once
 
+#include "config-kwin.h"
 #include <QObject>
 #include <memory>
+#if KWIN_BUILD_X11
 #include <xcb/xcb.h>
+#endif
 
 // forward declaration
 struct addrinfo;
@@ -57,7 +60,9 @@ public:
     explicit ClientMachine(QObject *parent = nullptr);
     ~ClientMachine() override;
 
+#if KWIN_BUILD_X11
     void resolve(xcb_window_t window, xcb_window_t clientLeader);
+#endif
     const QString &hostName() const;
     bool isLocal() const;
     static QString localhost();

@@ -30,6 +30,7 @@
 #include "screenedge.h"
 #include "utils/xcbutils.h"
 #include "virtualdesktops.h"
+#include "window.h"
 #include "workspace.h"
 #include "x11window.h"
 // Qt
@@ -42,12 +43,13 @@
 #include <KLazyLocalizedString>
 #include <KLocalizedString>
 #include <kkeyserver.h>
+#if KWIN_BUILD_X11
 // X11
 #include <X11/keysym.h>
 #include <X11/keysymdef.h>
 // xcb
 #include <xcb/xcb_keysyms.h>
-
+#endif
 // specify externals before namespace
 
 namespace KWin
@@ -666,6 +668,7 @@ void TabBox::grabbedKeyEvent(QKeyEvent *event)
     m_tabBox->grabbedKeyEvent(event);
 }
 
+#if KWIN_BUILD_X11
 struct KeySymbolsDeleter
 {
     void operator()(xcb_key_symbols_t *symbols)
@@ -751,6 +754,7 @@ static bool areModKeysDepressedX11(const QKeySequence &seq)
 
     return areKeySymXsDepressed(rgKeySyms, nKeySyms);
 }
+#endif
 
 static bool areModKeysDepressedWayland(const QKeySequence &seq)
 {
@@ -776,11 +780,15 @@ static bool areModKeysDepressed(const QKeySequence &seq)
     if (seq.isEmpty()) {
         return false;
     }
+#if KWIN_BUILD_X11
     if (kwinApp()->shouldUseWaylandForCompositing()) {
         return areModKeysDepressedWayland(seq);
     } else {
         return areModKeysDepressedX11(seq);
     }
+#else
+    return areModKeysDepressedWayland(seq);
+#endif
 }
 
 void TabBox::navigatingThroughWindows(bool forward, const QKeySequence &shortcut, TabBoxMode mode)
@@ -1184,10 +1192,12 @@ bool TabBox::establishTabBoxGrab()
         m_forcedGlobalMouseGrab = true;
         return true;
     }
+#if KWIN_BUILD_X11
     kwinApp()->updateXTime();
     if (!grabXKeyboard()) {
         return false;
     }
+#endif
     // Don't try to establish a global mouse grab using XGrabPointer, as that would prevent
     // using Alt+Tab while DND (#44972). However force passive grabs on all windows
     // in order to catch MouseRelease events and close the tabbox (#67416).
@@ -1198,7 +1208,9 @@ bool TabBox::establishTabBoxGrab()
     if (Workspace::self()->activeWindow() != nullptr) {
         Workspace::self()->activeWindow()->updateMouseGrab();
     }
+#if KWIN_BUILD_X11
     m_x11EventFilter = std::make_unique<X11Filter>();
+#endif
     return true;
 }
 
@@ -1208,8 +1220,10 @@ void TabBox::removeTabBoxGrab()
         m_forcedGlobalMouseGrab = false;
         return;
     }
+#if KWIN_BUILD_X11
     kwinApp()->updateXTime();
     ungrabXKeyboard();
+#endif
     Q_ASSERT(m_forcedGlobalMouseGrab);
     m_forcedGlobalMouseGrab = false;
     if (Workspace::self()->activeWindow() != nullptr) {

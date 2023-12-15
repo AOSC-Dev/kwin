@@ -71,12 +71,16 @@ namespace KWin
 {
 
 Options *options;
+#if KWIN_BUILD_X11
 Atoms *atoms;
+#endif
 int Application::crashes = 0;
 
 Application::Application(Application::OperationMode mode, int &argc, char **argv)
     : QApplication(argc, argv)
+#if KWIN_BUILD_X11
     , m_eventFilter(new XcbEventFilter())
+#endif
     , m_configLock(false)
     , m_config(KSharedConfig::openConfig(QStringLiteral("kwinrc")))
     , m_kxkbConfig()
@@ -150,8 +154,10 @@ void Application::notifyStarted()
 
 void Application::destroyAtoms()
 {
+#if KWIN_BUILD_X11
     delete atoms;
     atoms = nullptr;
+#endif
 }
 
 void Application::destroyPlatform()
@@ -262,7 +268,9 @@ void Application::createInput()
 
 void Application::createAtoms()
 {
+#if KWIN_BUILD_X11
     atoms = new Atoms;
+#endif
 }
 
 void Application::createOptions()
@@ -295,6 +303,7 @@ TabletModeManager *Application::tabletModeManager() const
     return m_tabletModeManager.get();
 }
 
+#if KWIN_BUILD_X11
 void Application::installNativeX11EventFilter()
 {
     installNativeEventFilter(m_eventFilter.get());
@@ -304,6 +313,7 @@ void Application::removeNativeX11EventFilter()
 {
     removeNativeEventFilter(m_eventFilter.get());
 }
+#endif
 
 void Application::destroyInput()
 {
@@ -358,6 +368,7 @@ void Application::createEffectsHandler(Compositor *compositor, WorkspaceScene *s
     new EffectsHandler(compositor, scene);
 }
 
+#if KWIN_BUILD_X11
 void Application::registerEventFilter(X11EventFilter *filter)
 {
     if (filter->isGenericEvent()) {
@@ -378,6 +389,7 @@ static X11EventFilterContainer *takeEventFilter(X11EventFilter *eventFilter,
     }
     return nullptr;
 }
+#endif
 
 void Application::setXwaylandScale(qreal scale)
 {
@@ -399,12 +411,16 @@ void Application::applyXwaylandScale()
     } else {
         kwinApp()->config()->group(QStringLiteral("Xwayland")).deleteEntry("Scale", KConfig::Notify);
     }
+
+#if KWIN_BUILD_X11
     if (x11Connection()) {
         // rerun the fonts kcm init that does the appropriate xrdb call with the new settings
         QProcess::startDetached("kcminit", {"kcm_fonts_init", "kcm_style_init"});
     }
+#endif
 }
 
+#if KWIN_BUILD_X11
 void Application::unregisterEventFilter(X11EventFilter *filter)
 {
     X11EventFilterContainer *container = nullptr;
@@ -620,6 +636,8 @@ bool XcbEventFilter::nativeEventFilter(const QByteArray &eventType, void *messag
     }
     return false;
 }
+
+#endif
 
 QProcessEnvironment Application::processStartupEnvironment() const
 {

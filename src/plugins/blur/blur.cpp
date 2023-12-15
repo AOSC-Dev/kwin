@@ -93,9 +93,11 @@ BlurEffect::BlurEffect()
     initBlurStrengthValues();
     reconfigure(ReconfigureAll);
 
+#if KWIN_BUILD_X11
     if (effects->xcbConnection()) {
         net_wm_blur_region = effects->announceSupportProperty(s_blurAtomName, this);
     }
+#endif
 
     if (effects->waylandDisplay()) {
         if (!s_blurManagerRemoveTimer) {
@@ -116,9 +118,11 @@ BlurEffect::BlurEffect()
     connect(effects, &EffectsHandler::windowDeleted, this, &BlurEffect::slotWindowDeleted);
     connect(effects, &EffectsHandler::screenRemoved, this, &BlurEffect::slotScreenRemoved);
     connect(effects, &EffectsHandler::propertyNotify, this, &BlurEffect::slotPropertyNotify);
+#if KWIN_BUILD_X11
     connect(effects, &EffectsHandler::xcbConnectionChanged, this, [this]() {
         net_wm_blur_region = effects->announceSupportProperty(s_blurAtomName, this);
     });
+#endif
 
     // Fetch the blur regions for all windows
     const auto stackingOrder = effects->stackingOrder();
@@ -214,6 +218,7 @@ void BlurEffect::updateBlurRegion(EffectWindow *w)
     QRegion region;
     bool valid = false;
 
+#if KWIN_BUILD_X11
     if (net_wm_blur_region != XCB_ATOM_NONE) {
         const QByteArray value = w->readProperty(net_wm_blur_region, XCB_ATOM_CARDINAL, 32);
         if (value.size() > 0 && !(value.size() % (4 * sizeof(uint32_t)))) {
@@ -228,6 +233,7 @@ void BlurEffect::updateBlurRegion(EffectWindow *w)
         }
         valid = !value.isNull();
     }
+#endif
 
     SurfaceInterface *surf = w->surface();
 

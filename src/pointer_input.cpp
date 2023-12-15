@@ -27,6 +27,7 @@
 #include "wayland/seat.h"
 #include "wayland/surface.h"
 #include "wayland_server.h"
+#include "window.h"
 #include "workspace.h"
 #include "x11window.h"
 // KDecoration

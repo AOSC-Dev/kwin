@@ -167,6 +167,7 @@ ClientMachine::~ClientMachine()
 {
 }
 
+#if KWIN_BUILD_X11
 void ClientMachine::resolve(xcb_window_t window, xcb_window_t clientLeader)
 {
     if (m_resolved) {
@@ -186,6 +187,7 @@ void ClientMachine::resolve(xcb_window_t window, xcb_window_t clientLeader)
     checkForLocalhost();
     m_resolved = true;
 }
+#endif
 
 void ClientMachine::checkForLocalhost()
 {

@@ -8,6 +8,7 @@
 */
 
 #pragma once
+#if KWIN_BUILD_X11
 
 #include <QGuiApplication>
 #include <kwin_export.h>
@@ -55,3 +56,4 @@ public:
 };
 
 }
+#endif

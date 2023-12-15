@@ -25,7 +25,11 @@ namespace KWin
 KillPrompt::KillPrompt(Window *window)
     : m_window(window)
 {
+#if KWIN_BUILD_X11
     Q_ASSERT(qobject_cast<X11Window *>(window) || qobject_cast<XdgToplevelWindow *>(window));
+#else
+    Q_ASSERT(qobject_cast<XdgToplevelWindow *>(window));
+#endif
 
     m_process.setProcessChannelMode(QProcess::ForwardedChannels);
 
@@ -58,6 +62,7 @@ void KillPrompt::start(quint32 timestamp)
     QString appId = !m_window->desktopFileName().isEmpty() ? m_window->desktopFileName() : m_window->resourceClass();
     QString platform;
 
+#if KWIN_BUILD_X11
     if (auto *x11Window = qobject_cast<X11Window *>(m_window)) {
         platform = QStringLiteral("xcb");
         wid = QString::number(x11Window->window());
@@ -65,7 +70,9 @@ void KillPrompt::start(quint32 timestamp)
         if (!x11Window->clientMachine()->isLocal()) {
             hostname = x11Window->clientMachine()->hostName();
         }
-    } else if (auto *xdgToplevel = qobject_cast<XdgToplevelWindow *>(m_window)) {
+    } else
+#endif
+        if (auto *xdgToplevel = qobject_cast<XdgToplevelWindow *>(m_window)) {
         platform = QStringLiteral("wayland");
         auto *exported = waylandServer()->exportAsForeign(xdgToplevel->surface());
         wid = exported->handle();

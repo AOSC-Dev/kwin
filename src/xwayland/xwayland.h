@@ -8,6 +8,7 @@
     SPDX-License-Identifier: GPL-2.0-or-later
 */
 #pragma once
+#if KWIN_BUILD_X11
 
 #include <memory>
 
@@ -97,3 +98,4 @@ private:
 
 } // namespace Xwl
 } // namespace KWin
+#endif

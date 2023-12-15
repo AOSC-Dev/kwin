@@ -54,7 +54,11 @@ EffectWindow::EffectWindow(WindowItem *windowItem)
     d->managed = d->m_window->isClient();
 
     d->m_waylandWindow = qobject_cast<KWin::WaylandWindow *>(d->m_window) != nullptr;
+#if KWIN_BUILD_X11
     d->m_x11Window = qobject_cast<KWin::X11Window *>(d->m_window) != nullptr;
+#else
+    d->m_x11Window = false;
+#endif
 
     connect(d->m_window, &Window::windowShown, this, [this]() {
         Q_EMIT windowShown(this);
@@ -311,9 +315,11 @@ WINDOW_HELPER(bool, isInputMethod, isInputMethod)
 
 qlonglong EffectWindow::windowId() const
 {
+#if KWIN_BUILD_X11
     if (X11Window *x11Window = qobject_cast<X11Window *>(d->m_window)) {
         return x11Window->window();
     }
+#endif
     return 0;
 }
 
@@ -334,9 +340,11 @@ NET::WindowType EffectWindow::windowType() const
 
 QSizeF EffectWindow::basicUnit() const
 {
+#if KWIN_BUILD_X11
     if (auto window = qobject_cast<X11Window *>(d->m_window)) {
         return window->basicUnit();
     }
+#endif
     return QSize(1, 1);
 }
 
@@ -352,6 +360,7 @@ KDecoration2::Decoration *EffectWindow::decoration() const
 
 QByteArray EffectWindow::readProperty(long atom, long type, int format) const
 {
+#if KWIN_BUILD_X11
     auto x11Window = qobject_cast<X11Window *>(d->m_window);
     if (!x11Window) {
         return QByteArray();
@@ -372,10 +381,13 @@ QByteArray EffectWindow::readProperty(long atom, long type, int format) const
         }
         return prop.toByteArray(format, type);
     }
+#endif
+    return {};
 }
 
 void EffectWindow::deleteProperty(long int atom) const
 {
+#if KWIN_BUILD_X11
     auto x11Window = qobject_cast<X11Window *>(d->m_window);
     if (!x11Window) {
         return;
@@ -384,6 +396,7 @@ void EffectWindow::deleteProperty(long int atom) const
         return;
     }
     xcb_delete_property(kwinApp()->x11Connection(), x11Window->window(), atom);
+#endif
 }
 
 EffectWindow *EffectWindow::findModal()
@@ -504,12 +517,14 @@ EffectWindowGroup::~EffectWindowGroup()
 
 QList<EffectWindow *> EffectWindowGroup::members() const
 {
-    const auto memberList = m_group->members();
     QList<EffectWindow *> ret;
+#if KWIN_BUILD_X11
+    const auto memberList = m_group->members();
     ret.reserve(memberList.size());
     std::transform(std::cbegin(memberList), std::cend(memberList), std::back_inserter(ret), [](auto window) {
         return window->effectWindow();
     });
+#endif
     return ret;
 }
 

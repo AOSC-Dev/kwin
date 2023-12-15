@@ -9,6 +9,7 @@
 */
 
 #pragma once
+#if KWIN_BUILD_X11
 
 // kwin
 #include "scene/decorationitem.h"
@@ -633,3 +634,5 @@ inline quint32 X11Window::pendingSurfaceId() const
 } // namespace
 Q_DECLARE_METATYPE(KWin::X11Window *)
 Q_DECLARE_METATYPE(QList<KWin::X11Window *>)
+
+#endif

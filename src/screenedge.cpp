@@ -28,6 +28,7 @@
 #include "pointer_input.h"
 #include "utils/common.h"
 #include "virtualdesktops.h"
+#include <window.h>
 #include <workspace.h>
 #include <x11window.h>
 // DBus generated
@@ -1476,6 +1477,7 @@ bool ScreenEdges::isEntered(QMouseEvent *event)
     return activated;
 }
 
+#if KWIN_BUILD_X11
 bool ScreenEdges::handleEnterNotifiy(xcb_window_t window, const QPoint &point, const QDateTime &timestamp)
 {
     bool activated = false;
@@ -1514,7 +1516,16 @@ bool ScreenEdges::handleEnterNotifiy(xcb_window_t window, const QPoint &point, c
     }
     return activated;
 }
+#endif
 
+void ScreenEdges::ensureOnTop()
+{
+#if KWIN_BUILD_X11
+    Xcb::restackWindowsWithRaise(windows());
+#endif
+}
+
+#if KWIN_BUILD_X11
 bool ScreenEdges::handleDndNotify(xcb_window_t window, const QPoint &point)
 {
     for (const auto &edge : m_edges) {
@@ -1528,11 +1539,6 @@ bool ScreenEdges::handleDndNotify(xcb_window_t window, const QPoint &point)
         }
     }
     return false;
-}
-
-void ScreenEdges::ensureOnTop()
-{
-    Xcb::restackWindowsWithRaise(windows());
 }
 
 QList<xcb_window_t> ScreenEdges::windows() const
@@ -1551,6 +1557,7 @@ QList<xcb_window_t> ScreenEdges::windows() const
     }
     return wins;
 }
+#endif
 
 void ScreenEdges::setRemainActiveOnFullscreen(bool remainActive)
 {

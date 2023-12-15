@@ -7,6 +7,7 @@
     SPDX-License-Identifier: GPL-2.0-or-later
 */
 #pragma once
+#if KWIN_BUILD_X11
 
 #include "effect/globals.h"
 #include "effect/xcb.h"
@@ -2096,3 +2097,5 @@ inline static Version xServerVersion()
 } // namespace X11
 
 } // namespace KWin
+
+#endif

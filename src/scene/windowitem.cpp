@@ -297,6 +297,7 @@ void WindowItem::freeze()
     }
 }
 
+#if KWIN_BUILD_X11
 WindowItemX11::WindowItemX11(X11Window *window, Scene *scene, Item *parent)
     : WindowItem(window, scene, parent)
 {
@@ -323,6 +324,7 @@ void WindowItemX11::initialize()
         Q_UNREACHABLE();
     }
 }
+#endif
 
 WindowItemWayland::WindowItemWayland(Window *window, Scene *scene, Item *parent)
     : WindowItem(window, scene, parent)

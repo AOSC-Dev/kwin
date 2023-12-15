@@ -21,6 +21,7 @@
 #include "x11window.h"
 #endif
 
+#include "window.h"
 #include <QTextStream>
 #include <QTimer>
 

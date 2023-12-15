@@ -61,6 +61,7 @@
 #include "core/renderviewport.h"
 #include "effect/effecthandler.h"
 #include "internalwindow.h"
+#include "scene/decorationitem.h"
 #include "scene/dndiconitem.h"
 #include "scene/itemrenderer.h"
 #include "scene/shadowitem.h"
@@ -71,6 +72,7 @@
 #include "wayland/surface.h"
 #include "wayland_server.h"
 #include "waylandwindow.h"
+#include "window.h"
 #include "workspace.h"
 #include "x11window.h"
 

@@ -213,6 +213,7 @@ bool SurfacePixmapWayland::isValid() const
     return m_bufferRef;
 }
 
+#if KWIN_BUILD_X11
 SurfaceItemXwayland::SurfaceItemXwayland(X11Window *window, Scene *scene, Item *parent)
     : SurfaceItemWayland(window->surface(), scene, parent)
     , m_window(window)
@@ -231,6 +232,7 @@ QList<QRectF> SurfaceItemXwayland::shape() const
     }
     return shape;
 }
+#endif
 
 } // namespace KWin
 

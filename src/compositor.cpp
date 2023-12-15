@@ -42,14 +42,14 @@ Compositor *Compositor::self()
 Compositor::Compositor(QObject *workspace)
     : QObject(workspace)
 {
+#if KWIN_BUILD_X11
     // 2 sec which should be enough to restart the compositor.
     static const int compositorLostMessageDelay = 2000;
-
     m_unusedSupportPropertyTimer.setInterval(compositorLostMessageDelay);
     m_unusedSupportPropertyTimer.setSingleShot(true);
     connect(&m_unusedSupportPropertyTimer, &QTimer::timeout,
             this, &Compositor::deleteUnusedSupportProperties);
-
+#endif
     // Delay the call to start by one event cycle.
     // The ctor of this class is invoked from the Workspace ctor, that means before
     // Workspace is completely constructed, so calling Workspace::self() would result
@@ -63,7 +63,9 @@ Compositor::Compositor(QObject *workspace)
 
 Compositor::~Compositor()
 {
+#if KWIN_BUILD_X11
     deleteUnusedSupportProperties();
+#endif
     s_compositor = nullptr;
 }
 
@@ -91,6 +93,7 @@ void Compositor::removeSuperLayer(RenderLayer *layer)
     delete layer;
 }
 
+#if KWIN_BUILD_X11
 void Compositor::keepSupportProperty(xcb_atom_t atom)
 {
     m_unusedSupportProperties.removeAll(atom);
@@ -117,6 +120,7 @@ void Compositor::deleteUnusedSupportProperties()
         m_unusedSupportProperties.clear();
     }
 }
+#endif
 
 void Compositor::reinitialize()
 {

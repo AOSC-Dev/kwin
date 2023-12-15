@@ -11,6 +11,7 @@
 */
 #pragma once
 
+#if KWIN_BUILD_X11
 #include <NETWM>
 
 #include <memory>
@@ -79,3 +80,5 @@ private:
 };
 
 } // KWin
+
+#endif

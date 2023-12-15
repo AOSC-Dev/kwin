@@ -1,2 +1,5 @@
 add_subdirectory(killer)
-add_subdirectory(wayland_wrapper)
+
+if (KWIN_BUILD_X11)
+    add_subdirectory(wayland_wrapper)
+endif()

@@ -67,6 +67,8 @@ StrutRect &StrutRect::operator=(const StrutRect &other)
     return *this;
 }
 
+#if KWIN_BUILD_X11
+
 static int server_grab_count = 0;
 
 void grabXServer()
@@ -190,6 +192,7 @@ Qt::KeyboardModifiers x11ToQtKeyboardModifiers(int state)
     }
     return ret;
 }
+#endif
 
 QPointF popupOffset(const QRectF &anchorRect, const Qt::Edges anchorEdge, const Qt::Edges gravity, const QSizeF popupSize)
 {

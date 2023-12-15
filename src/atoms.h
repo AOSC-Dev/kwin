@@ -10,6 +10,7 @@
 */
 
 #pragma once
+#if KWIN_BUILD_X11
 
 #include "utils/xcbutils.h"
 
@@ -92,3 +93,5 @@ private:
 extern KWIN_EXPORT Atoms *atoms;
 
 } // namespace
+
+#endif

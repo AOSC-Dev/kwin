@@ -122,10 +122,12 @@ public:
     {
         return m_keyboardShortcutsInhibitManager;
     }
+#if KWIN_BUILD_X11
     XwaylandShellV1Interface *xwaylandShell() const
     {
         return m_xwaylandShell;
     }
+#endif
 
     bool isKeyboardShortcutsInhibited() const;
 
@@ -159,11 +161,13 @@ public:
      */
     XdgExportedSurface *exportAsForeign(SurfaceInterface *surface);
 
+#if KWIN_BUILD_X11
     /**
      * @returns file descriptor for Xwayland to connect to.
      */
     int createXWaylandConnection();
     void destroyXWaylandConnection();
+#endif
 
     /**
      * @returns file descriptor to the input method server's socket.

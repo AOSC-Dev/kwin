@@ -306,6 +306,7 @@ bool WaylandServer::init(InitializationFlags flags)
 {
     m_initFlags = flags;
     m_compositor = new CompositorInterface(m_display, m_display);
+#if KWIN_BUILD_X11
     connect(m_compositor, &CompositorInterface::surfaceCreated, this, [this](SurfaceInterface *surface) {
         // check whether we have a Window with the Surface's id
         Workspace *ws = Workspace::self();
@@ -355,6 +356,7 @@ bool WaylandServer::init(InitializationFlags flags)
             return;
         }
     });
+#endif
 
     m_tabletManagerV2 = new TabletManagerV2Interface(m_display, m_display);
     m_keyboardShortcutsInhibitManager = new KeyboardShortcutsInhibitManagerV1Interface(m_display, m_display);
@@ -671,6 +673,7 @@ int WaylandServer::createScreenLockerConnection()
     return socket.fd;
 }
 
+#if KWIN_BUILD_X11
 int WaylandServer::createXWaylandConnection()
 {
     const auto socket = createConnection();
@@ -695,6 +698,7 @@ void WaylandServer::destroyXWaylandConnection()
     m_xwaylandConnection->destroy();
     m_xwaylandConnection = nullptr;
 }
+#endif
 
 int WaylandServer::createInputMethodConnection()
 {
