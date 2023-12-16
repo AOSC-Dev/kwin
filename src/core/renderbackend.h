@@ -49,10 +49,14 @@ public:
 
     void addFeedback(std::unique_ptr<PresentationFeedback> &&feedback);
 
+    void setContentType(ContentType type);
+    std::optional<ContentType> contentType() const;
+
 private:
     RenderLoop *const m_loop;
     std::vector<std::unique_ptr<PresentationFeedback>> m_feedbacks;
     QPointer<OutputLayer> m_layer;
+    std::optional<ContentType> m_contentType;
 };
 
 /**
