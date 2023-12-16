@@ -54,6 +54,16 @@ std::optional<ContentType> OutputFrame::contentType() const
     return m_contentType;
 }
 
+void OutputFrame::setPresentationMode(PresentationMode mode)
+{
+    m_presentationMode = mode;
+}
+
+PresentationMode OutputFrame::presentationMode() const
+{
+    return m_presentationMode;
+}
+
 RenderBackend::RenderBackend(QObject *parent)
     : QObject(parent)
 {
