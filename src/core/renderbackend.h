@@ -10,7 +10,7 @@
 #include "effect/globals.h"
 
 #include <QObject>
-
+#include <QPointer>
 #include <memory>
 
 namespace KWin
@@ -41,10 +41,10 @@ public:
 class KWIN_EXPORT OutputFrame
 {
 public:
-    explicit OutputFrame(RenderLoop *loop);
+    explicit OutputFrame(RenderLoop *loop, OutputLayer *layer);
     ~OutputFrame();
 
-    void presented(std::chrono::nanoseconds refreshDuration, std::chrono::nanoseconds timestamp, std::chrono::nanoseconds renderTime, PresentationMode mode);
+    void presented(std::chrono::nanoseconds refreshDuration, std::chrono::nanoseconds timestamp, PresentationMode mode);
     void failed();
 
     void addFeedback(std::unique_ptr<PresentationFeedback> &&feedback);
@@ -52,6 +52,7 @@ public:
 private:
     RenderLoop *const m_loop;
     std::vector<std::unique_ptr<PresentationFeedback>> m_feedbacks;
+    QPointer<OutputLayer> m_layer;
 };
 
 /**
