@@ -64,7 +64,7 @@ void OutputLayer::resetRepaints()
     m_repaints = QRegion();
 }
 
-bool OutputLayer::scanout(SurfaceItem *surfaceItem)
+bool OutputLayer::scanout(SurfaceItem *surfaceItem, OutputFrame *frame)
 {
     return false;
 }

@@ -61,6 +61,7 @@ public:
     bool setChannelFactors(const QVector3D &rgb) override;
     QVector3D channelFactors() const;
     bool needsColormanagement() const;
+    PresentationMode desiredPresentationMode() const;
 
 private:
     bool setDrmDpmsMode(DpmsMode mode);
@@ -77,6 +78,8 @@ private:
 
     QVector3D m_channelFactors = {1, 1, 1};
     bool m_channelFactorsNeedShaderFallback = false;
+
+    PresentationMode m_desiredPresentationMode = PresentationMode::VSync;
 };
 
 }

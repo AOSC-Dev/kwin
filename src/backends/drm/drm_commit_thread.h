@@ -47,6 +47,7 @@ private:
     void optimizeCommits();
 
     std::unique_ptr<DrmCommit> m_committed;
+    std::unique_ptr<DrmAtomicCommit> m_flipped;
     std::vector<std::unique_ptr<DrmAtomicCommit>> m_commits;
     std::unique_ptr<QThread> m_thread;
     std::mutex m_mutex;

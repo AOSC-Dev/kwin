@@ -36,7 +36,7 @@ public:
 
     std::optional<OutputLayerBeginFrameInfo> beginFrame() override;
     bool endFrame(const QRegion &renderedRegion, const QRegion &damagedRegion) override;
-    bool scanout(SurfaceItem *surfaceItem) override;
+    bool scanout(SurfaceItem *surfaceItem, OutputFrame *frame) override;
 
     QRegion currentDamage() const override;
     std::shared_ptr<GLTexture> texture() const override;

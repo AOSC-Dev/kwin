@@ -97,7 +97,7 @@ ColorDescription EglGbmLayer::colorDescription() const
     return m_surface.colorDescription();
 }
 
-bool EglGbmLayer::scanout(SurfaceItem *surfaceItem)
+bool EglGbmLayer::scanout(SurfaceItem *surfaceItem, OutputFrame *frame)
 {
     static bool valid;
     static const bool directScanoutDisabled = qEnvironmentVariableIntValue("KWIN_DRM_NO_DIRECT_SCANOUT", &valid) == 1 && valid;
@@ -140,6 +140,12 @@ bool EglGbmLayer::scanout(SurfaceItem *surfaceItem)
         return false;
     }
     m_scanoutBuffer = m_pipeline->gpu()->importBuffer(buffer);
+    if (m_scanoutBuffer) {
+        if (frame->contentType()) {
+            m_pipeline->setContentType(DrmConnector::kwinToDrmContentType(*frame->contentType()));
+        }
+        m_pipeline->setPresentationMode(frame->presentationMode());
+    }
     if (m_scanoutBuffer && m_pipeline->testScanout()) {
         m_dmabufFeedback.scanoutSuccessful(surface);
         m_currentDamage = surfaceItem->mapFromBuffer(surfaceItem->damage());

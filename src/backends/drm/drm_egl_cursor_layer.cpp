@@ -48,6 +48,12 @@ EglGbmCursorLayer::EglGbmCursorLayer(EglGbmBackend *eglBackend, DrmPipeline *pip
 
 std::optional<OutputLayerBeginFrameInfo> EglGbmCursorLayer::beginFrame()
 {
+    const bool tearingDesired = m_pipeline->output()->desiredPresentationMode() == PresentationMode::Async || m_pipeline->output()->desiredPresentationMode() == PresentationMode::AdaptiveAsync;
+    if (m_pipeline->gpu()->atomicModeSetting() && tearingDesired) {
+        // The kernel rejects async commits that have anything but the primary plane FB_ID property in it.
+        // This disables the hardware cursor entirely, so it doesn't interfere with that
+        return std::nullopt;
+    }
     // note that this allows blending to happen in sRGB or PQ encoding.
     // That's technically incorrect, but it looks okay and is intentionally allowed
     // as the hardware cursor is more important than an incorrectly blended cursor edge

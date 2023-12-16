@@ -141,7 +141,7 @@ std::shared_ptr<GLTexture> VirtualEglGbmLayer::texture() const
     }
 }
 
-bool VirtualEglGbmLayer::scanout(SurfaceItem *surfaceItem)
+bool VirtualEglGbmLayer::scanout(SurfaceItem *surfaceItem, OutputFrame *frame)
 {
     static bool valid;
     static const bool directScanoutDisabled = qEnvironmentVariableIntValue("KWIN_DRM_NO_DIRECT_SCANOUT", &valid) == 1 && valid;

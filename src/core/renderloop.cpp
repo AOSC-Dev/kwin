@@ -103,6 +103,7 @@ void RenderLoopPrivate::notifyFrameCompleted(std::chrono::nanoseconds timestamp,
         maybeScheduleRepaint();
     }
 
+    presentationMode = mode;
     Q_EMIT q->framePresented(q, timestamp, mode);
 }
 

@@ -224,10 +224,10 @@ static QRect centerBuffer(const QSize &bufferSize, const QSize &modeSize)
 DrmPipeline::Error DrmPipeline::prepareAtomicPresentation(DrmAtomicCommit *commit)
 {
     commit->setPresentationMode(m_pending.presentationMode);
+    commit->setTearing(m_pending.presentationMode == PresentationMode::Async || m_pending.presentationMode == PresentationMode::AdaptiveAsync);
     if (m_connector->contentType.isValid()) {
         commit->addEnum(m_connector->contentType, m_pending.contentType);
     }
-
     if (m_pending.crtc->vrrEnabled.isValid()) {
         commit->setVrr(m_pending.crtc, m_pending.presentationMode == PresentationMode::AdaptiveSync || m_pending.presentationMode == PresentationMode::AdaptiveAsync);
     }

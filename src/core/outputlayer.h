@@ -18,6 +18,7 @@ namespace KWin
 {
 
 class SurfaceItem;
+class OutputFrame;
 
 struct OutputLayerBeginFrameInfo
 {
@@ -73,7 +74,7 @@ public:
      * Tries to import the newest buffer of the surface for direct scanout
      * Returns @c true if scanout succeeds, @c false if rendering is necessary
      */
-    virtual bool scanout(SurfaceItem *surfaceItem);
+    virtual bool scanout(SurfaceItem *surfaceItem, OutputFrame *frame);
 
     /**
      * queries the render time of the last frame. If rendering isn't complete yet, this may block until it is

@@ -277,10 +277,12 @@ bool DrmOutput::present(const std::shared_ptr<OutputFrame> &frame)
     if (frame->contentType()) {
         type = DrmConnector::kwinToDrmContentType(*frame->contentType());
     }
+    m_desiredPresentationMode = frame->presentationMode();
     const bool needsModeset = gpu()->needsModeset();
     bool success;
     if (needsModeset) {
         m_pipeline->setPresentationMode(PresentationMode::VSync);
+        m_renderLoop->setPresentationMode(PresentationMode::VSync);
         m_pipeline->setContentType(DrmConnector::DrmContentType::Graphics);
         success = m_pipeline->maybeModeset();
     } else {
@@ -288,8 +290,10 @@ bool DrmOutput::present(const std::shared_ptr<OutputFrame> &frame)
         m_pipeline->setContentType(type);
         DrmPipeline::Error err = m_pipeline->present();
         if (err != DrmPipeline::Error::None && frame->presentationMode() != PresentationMode::VSync) {
-            // retry with a more basic presentation mode
+            // retry with a more basic presentation mode, and reset the render loop's presentation mode
+            // so it doesn't attempt async commits anymore
             m_pipeline->setPresentationMode(PresentationMode::VSync);
+            m_renderLoop->setPresentationMode(PresentationMode::VSync);
             err = m_pipeline->present();
         }
         success = err == DrmPipeline::Error::None;
@@ -297,7 +301,6 @@ bool DrmOutput::present(const std::shared_ptr<OutputFrame> &frame)
             QTimer::singleShot(0, m_gpu->platform(), &DrmBackend::updateOutputs);
         }
     }
-    m_renderLoop->setPresentationMode(m_pipeline->presentationMode());
     if (success) {
         Q_EMIT outputChange(m_pipeline->primaryLayer()->currentDamage());
         return true;
@@ -471,6 +474,11 @@ QVector3D DrmOutput::channelFactors() const
 bool DrmOutput::needsColormanagement() const
 {
     return m_state.wideColorGamut || m_state.highDynamicRange || m_state.iccProfile || m_channelFactorsNeedShaderFallback;
+}
+
+PresentationMode DrmOutput::desiredPresentationMode() const
+{
+    return m_desiredPresentationMode;
 }
 }
 

@@ -30,7 +30,7 @@ public:
 
     std::optional<OutputLayerBeginFrameInfo> beginFrame() override;
     bool endFrame(const QRegion &renderedRegion, const QRegion &damagedRegion) override;
-    bool scanout(SurfaceItem *surfaceItem) override;
+    bool scanout(SurfaceItem *surfaceItem, OutputFrame *frame) override;
     bool checkTestBuffer() override;
     std::shared_ptr<DrmFramebuffer> currentBuffer() const override;
     bool hasDirectScanoutBuffer() const override;
