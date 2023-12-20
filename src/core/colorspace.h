@@ -7,6 +7,7 @@
 #include <optional>
 
 #include <QMatrix3x3>
+#include <QMatrix4x4>
 #include <QVector2D>
 
 #include "kwin_export.h"
@@ -28,7 +29,7 @@ class KWIN_EXPORT Colorimetry
 {
 public:
     static Colorimetry fromName(NamedColorimetry name);
-    static Colorimetry fromXYZ(QVector3D red, QVector3D green, QVector3D blue, QVector3D white);
+    static Colorimetry fromXYZ(QVector3D red, QVector3D green, QVector3D blue, QVector3D white, QVector3D black);
     /**
      * @returns the XYZ representation of the xyY color passed in. Y is assumed to be one
      */
@@ -40,17 +41,18 @@ public:
     /**
      * @returns a matrix adapting XYZ values from the source whitepoint to the destination whitepoint with the Bradford transform
      */
-    static QMatrix3x3 chromaticAdaptationMatrix(QVector2D sourceWhitepoint, QVector2D destinationWhitepoint);
+    static QMatrix4x4 chromaticAdaptationMatrix(QVector2D sourceWhitepoint, QVector2D destinationWhitepoint);
+    static QMatrix4x4 blackPointCompensationMatrix(QVector3D sourceBlackpoint, QVector3D destinationBlackpoint, QVector3D whitepoint);
 
     /**
      * @returns a matrix that transforms from the linear RGB representation of colors in this colorimetry to the XYZ representation
      */
-    QMatrix3x3 toXYZ() const;
+    QMatrix4x4 toXYZ() const;
     /**
      * @returns a matrix that transforms from linear RGB in this colorimetry to linear RGB in the other colorimetry
      * the rendering intent is relative colorimetric
      */
-    QMatrix3x3 toOther(const Colorimetry &colorimetry) const;
+    QMatrix4x4 toOther(const Colorimetry &colorimetry) const;
     bool operator==(const Colorimetry &other) const;
     /**
      * @returns this colorimetry, adapted to the new whitepoint using the Bradford transform
@@ -61,6 +63,7 @@ public:
     QVector2D green;
     QVector2D blue;
     QVector2D white;
+    QVector3D black;
     std::optional<NamedColorimetry> name;
 };
 

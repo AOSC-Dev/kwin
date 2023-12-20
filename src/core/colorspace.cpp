@@ -10,25 +10,9 @@
 namespace KWin
 {
 
-static QMatrix3x3 inverse(const QMatrix3x3 &m)
+static QMatrix4x4 matrixFromColumns(const QVector3D &first, const QVector3D &second, const QVector3D &third)
 {
-    const double determinant = m(0, 0) * (m(1, 1) * m(2, 2) - m(2, 1) * m(1, 2)) - m(0, 1) * (m(1, 0) * m(2, 2) - m(1, 2) * m(2, 0)) + m(0, 2) * (m(1, 0) * m(2, 1) - m(1, 1) * m(2, 0));
-    QMatrix3x3 ret;
-    ret(0, 0) = (m(1, 1) * m(2, 2) - m(2, 1) * m(1, 2)) / determinant;
-    ret(0, 1) = (m(0, 2) * m(2, 1) - m(0, 1) * m(2, 2)) / determinant;
-    ret(0, 2) = (m(0, 1) * m(1, 2) - m(0, 2) * m(1, 1)) / determinant;
-    ret(1, 0) = (m(1, 2) * m(2, 0) - m(1, 0) * m(2, 2)) / determinant;
-    ret(1, 1) = (m(0, 0) * m(2, 2) - m(0, 2) * m(2, 0)) / determinant;
-    ret(1, 2) = (m(1, 0) * m(0, 2) - m(0, 0) * m(1, 2)) / determinant;
-    ret(2, 0) = (m(1, 0) * m(2, 1) - m(2, 0) * m(1, 1)) / determinant;
-    ret(2, 1) = (m(2, 0) * m(0, 1) - m(0, 0) * m(2, 1)) / determinant;
-    ret(2, 2) = (m(0, 0) * m(1, 1) - m(1, 0) * m(0, 1)) / determinant;
-    return ret;
-}
-
-static QMatrix3x3 matrixFromColumns(const QVector3D &first, const QVector3D &second, const QVector3D &third)
-{
-    QMatrix3x3 ret;
+    QMatrix4x4 ret;
     ret(0, 0) = first.x();
     ret(1, 0) = first.y();
     ret(2, 0) = first.z();
@@ -39,14 +23,6 @@ static QMatrix3x3 matrixFromColumns(const QVector3D &first, const QVector3D &sec
     ret(1, 2) = third.y();
     ret(2, 2) = third.z();
     return ret;
-}
-
-static QVector3D operator*(const QMatrix3x3 &mat, const QVector3D &v)
-{
-    return QVector3D(
-        mat(0, 0) * v.x() + mat(0, 1) * v.y() + mat(0, 2) * v.z(),
-        mat(1, 0) * v.x() + mat(1, 1) * v.y() + mat(1, 2) * v.z(),
-        mat(2, 0) * v.x() + mat(2, 1) * v.y() + mat(2, 2) * v.z());
 }
 
 QVector3D Colorimetry::xyToXYZ(QVector2D xy)
@@ -60,20 +36,20 @@ QVector2D Colorimetry::xyzToXY(QVector3D xyz)
     return QVector2D(xyz.x() / (xyz.x() + xyz.y() + xyz.z()), xyz.y() / (xyz.x() + xyz.y() + xyz.z()));
 }
 
-QMatrix3x3 Colorimetry::toXYZ() const
+QMatrix4x4 Colorimetry::toXYZ() const
 {
     const auto r_xyz = xyToXYZ(red);
     const auto g_xyz = xyToXYZ(green);
     const auto b_xyz = xyToXYZ(blue);
     const auto w_xyz = xyToXYZ(white);
-    const auto component_scale = inverse(matrixFromColumns(r_xyz, g_xyz, b_xyz)) * w_xyz;
+    const auto component_scale = (matrixFromColumns(r_xyz, g_xyz, b_xyz)).inverted() * w_xyz;
     return matrixFromColumns(r_xyz * component_scale.x(), g_xyz * component_scale.y(), b_xyz * component_scale.z());
 }
 
-QMatrix3x3 Colorimetry::chromaticAdaptationMatrix(QVector2D sourceWhitepoint, QVector2D destinationWhitepoint)
+QMatrix4x4 Colorimetry::chromaticAdaptationMatrix(QVector2D sourceWhitepoint, QVector2D destinationWhitepoint)
 {
-    static const QMatrix3x3 bradford = []() {
-        QMatrix3x3 ret;
+    static const QMatrix4x4 bradford = []() {
+        QMatrix4x4 ret;
         ret(0, 0) = 0.8951;
         ret(0, 1) = 0.2664;
         ret(0, 2) = -0.1614;
@@ -85,8 +61,8 @@ QMatrix3x3 Colorimetry::chromaticAdaptationMatrix(QVector2D sourceWhitepoint, QV
         ret(2, 2) = 1.0296;
         return ret;
     }();
-    static const QMatrix3x3 inverseBradford = []() {
-        QMatrix3x3 ret;
+    static const QMatrix4x4 inverseBradford = []() {
+        QMatrix4x4 ret;
         ret(0, 0) = 0.9869929;
         ret(0, 1) = -0.1470543;
         ret(0, 2) = 0.1599627;
@@ -99,21 +75,28 @@ QMatrix3x3 Colorimetry::chromaticAdaptationMatrix(QVector2D sourceWhitepoint, QV
         return ret;
     }();
     const QVector3D factors = (bradford * xyToXYZ(destinationWhitepoint)) / (bradford * xyToXYZ(sourceWhitepoint));
-    QMatrix3x3 adaptation{};
+    QMatrix4x4 adaptation{};
     adaptation(0, 0) = factors.x();
     adaptation(1, 1) = factors.y();
     adaptation(2, 2) = factors.z();
     return inverseBradford * adaptation * bradford;
 }
 
-QMatrix3x3 Colorimetry::toOther(const Colorimetry &other) const
+QMatrix4x4 Colorimetry::blackPointCompensationMatrix(QVector3D sourceBlackpoint, QVector3D destinationBlackpoint, QVector3D whitepoint)
 {
-    // rendering intent is relative colorimetric, so adapt to the different whitepoint
-    if (white == other.white) {
-        return inverse(other.toXYZ()) * toXYZ();
-    } else {
-        return inverse(other.toXYZ()) * chromaticAdaptationMatrix(this->white, other.white) * toXYZ();
-    }
+    const QVector3D srcRatio = (whitepoint - sourceBlackpoint) / whitepoint;
+    const QVector3D dstRatio = (whitepoint - destinationBlackpoint) / whitepoint;
+    const QVector3D offset = destinationBlackpoint - sourceBlackpoint;
+    QMatrix4x4 ret;
+    ret.translate(offset);
+    ret.scale(dstRatio / srcRatio);
+    return ret;
+}
+
+QMatrix4x4 Colorimetry::toOther(const Colorimetry &other) const
+{
+    // rendering intent is relative colorimetric, so adapt to the different white- and blackpoint
+    return other.toXYZ().inverted() * blackPointCompensationMatrix(this->black, other.black, xyToXYZ(other.white)) * chromaticAdaptationMatrix(this->white, other.white) * toXYZ();
 }
 
 Colorimetry Colorimetry::adaptedTo(QVector2D newWhitepoint) const
@@ -131,7 +114,7 @@ Colorimetry Colorimetry::adaptedTo(QVector2D newWhitepoint) const
 bool Colorimetry::operator==(const Colorimetry &other) const
 {
     return (name || other.name) ? (name == other.name)
-                                : (red == other.red && green == other.green && blue == other.blue && white == other.white);
+                                : (red == other.red && green == other.green && blue == other.blue && white == other.white && black == other.black);
 }
 
 static const Colorimetry BT709 = Colorimetry{
@@ -139,6 +122,7 @@ static const Colorimetry BT709 = Colorimetry{
     .green = {0.30, 0.60},
     .blue = {0.15, 0.06},
     .white = {0.3127, 0.3290},
+    .black = {0, 0, 0},
     .name = NamedColorimetry::BT709,
 };
 
@@ -147,6 +131,7 @@ static const Colorimetry BT2020 = Colorimetry{
     .green = {0.170, 0.797},
     .blue = {0.131, 0.046},
     .white = {0.3127, 0.3290},
+    .black = {0, 0, 0},
     .name = NamedColorimetry::BT2020,
 };
 
@@ -161,13 +146,14 @@ Colorimetry Colorimetry::fromName(NamedColorimetry name)
     Q_UNREACHABLE();
 }
 
-Colorimetry Colorimetry::fromXYZ(QVector3D red, QVector3D green, QVector3D blue, QVector3D white)
+Colorimetry Colorimetry::fromXYZ(QVector3D red, QVector3D green, QVector3D blue, QVector3D white, QVector3D black)
 {
     return Colorimetry{
         .red = xyzToXY(red),
         .green = xyzToXY(green),
         .blue = xyzToXY(blue),
         .white = xyzToXY(white),
+        .black = black,
         .name = std::nullopt,
     };
 }
@@ -181,6 +167,7 @@ static Colorimetry sRGBColorimetry(double factor)
         .green = BT709.green * (1 - factor) + BT2020.green * factor,
         .blue = BT709.blue * (1 - factor) + BT2020.blue * factor,
         .white = BT709.white, // whitepoint is the same
+        .black = BT709.black, // blackpoint is the same
     };
 }
 
