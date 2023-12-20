@@ -113,8 +113,8 @@ QRectF OutputTransform::map(const QRectF &rect, const QSizeF &bounds) const
                       rect.width(),
                       rect.height());
     case Kind::Flipped90:
-        return QRectF(bounds.height() - (rect.y() + rect.height()),
-                      bounds.width() - (rect.x() + rect.width()),
+        return QRectF(rect.y(),
+                      rect.x(),
                       rect.height(),
                       rect.width());
     case Kind::Flipped180:
@@ -123,8 +123,8 @@ QRectF OutputTransform::map(const QRectF &rect, const QSizeF &bounds) const
                       rect.width(),
                       rect.height());
     case Kind::Flipped270:
-        return QRectF(rect.y(),
-                      rect.x(),
+        return QRectF(bounds.height() - (rect.y() + rect.height()),
+                      bounds.width() - (rect.x() + rect.width()),
                       rect.height(),
                       rect.width());
     default:
@@ -158,8 +158,8 @@ QRect OutputTransform::map(const QRect &rect, const QSize &bounds) const
                      rect.width(),
                      rect.height());
     case Kind::Flipped90:
-        return QRect(bounds.height() - (rect.y() + rect.height()),
-                     bounds.width() - (rect.x() + rect.width()),
+        return QRect(rect.y(),
+                     rect.x(),
                      rect.height(),
                      rect.width());
     case Kind::Flipped180:
@@ -168,8 +168,8 @@ QRect OutputTransform::map(const QRect &rect, const QSize &bounds) const
                      rect.width(),
                      rect.height());
     case Kind::Flipped270:
-        return QRect(rect.y(),
-                     rect.x(),
+        return QRect(bounds.height() - (rect.y() + rect.height()),
+                     bounds.width() - (rect.x() + rect.width()),
                      rect.height(),
                      rect.width());
     default:
@@ -195,14 +195,14 @@ QPointF OutputTransform::map(const QPointF &point, const QSizeF &bounds) const
         return QPointF(bounds.width() - point.x(),
                        point.y());
     case Kind::Flipped90:
-        return QPointF(bounds.height() - point.y(),
-                       bounds.width() - point.x());
+        return QPointF(point.y(),
+                       point.x());
     case Kind::Flipped180:
         return QPointF(point.x(),
                        bounds.height() - point.y());
     case Kind::Flipped270:
-        return QPointF(point.y(),
-                       point.x());
+        return QPointF(bounds.height() - point.y(),
+                       bounds.width() - point.x());
     default:
         Q_UNREACHABLE();
     }
@@ -226,14 +226,14 @@ QPoint OutputTransform::map(const QPoint &point, const QSize &bounds) const
         return QPoint(bounds.width() - point.x(),
                       point.y());
     case Kind::Flipped90:
-        return QPoint(bounds.height() - point.y(),
-                      bounds.width() - point.x());
+        return QPoint(point.y(),
+                      point.x());
     case Kind::Flipped180:
         return QPoint(point.x(),
                       bounds.height() - point.y());
     case Kind::Flipped270:
-        return QPoint(point.y(),
-                      point.x());
+        return QPoint(bounds.height() - point.y(),
+                      bounds.width() - point.x());
     default:
         Q_UNREACHABLE();
     }
@@ -269,8 +269,8 @@ OutputTransform OutputTransform::combine(OutputTransform other) const
 {
     const int flip = (m_kind ^ other.m_kind) & 0x4;
     int rotate;
-    if (m_kind & 0x4) {
-        rotate = (m_kind - other.m_kind) & 0x3; // rotate counter-clockwise if flipped
+    if (other.m_kind & 0x4) {
+        rotate = (other.m_kind - m_kind) & 0x3; // rotate counter-clockwise if flipped
     } else {
         rotate = (m_kind + other.m_kind) & 0x3;
     }
@@ -296,16 +296,16 @@ QMatrix4x4 OutputTransform::toMatrix() const
         matrix.scale(-1, 1);
         break;
     case Kind::Flipped90:
-        matrix.scale(-1, 1);
         matrix.rotate(-90, 0, 0, 1);
+        matrix.scale(-1, 1);
         break;
     case Kind::Flipped180:
-        matrix.scale(-1, 1);
         matrix.rotate(-180, 0, 0, 1);
+        matrix.scale(-1, 1);
         break;
     case Kind::Flipped270:
-        matrix.scale(-1, 1);
         matrix.rotate(-270, 0, 0, 1);
+        matrix.scale(-1, 1);
         break;
     default:
         Q_UNREACHABLE();
