@@ -2785,3 +2785,9 @@ msgstr ""
 "使用了哪种 OpenGL 驱动程序、正在运行哪些特效等。\n"
 "请将本导语下方的信息复制到一个在线剪贴板中，\n"
 "例如 https://paste.kde.org ，而不是直接粘贴到请求支持的讨论贴中。\n"
+
+#: src/plugins/bincompatmarker/markerinterface.cpp:19
+#, kde-format
+msgctxt "LoongArch64 binary compatibility marker plugin (patched in)"
+msgid "(Compatibility Mode)"
+msgstr "（兼容模式）"
